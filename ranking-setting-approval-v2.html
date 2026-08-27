@@ -186,6 +186,36 @@
   .pill-ok{background:var(--ok-bg); color:var(--ok-ink); border-color:var(--ok-line)}
   .record-btn{background:none; border:0; padding:0; cursor:pointer; color:var(--accent); line-height:1}
   .record-btn .ms{font-size:17px}
+  .pill-grey{background:#f4f4f4; color:var(--muted); border-color:#e3e3e3}
+
+  /* ---------- list screen: Activity Setting (V1 layout) ---------- */
+  .box.plain{border-top:0}
+  .filters{display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end; padding:14px 15px}
+  .field{display:flex; flex-direction:column; gap:6px; min-width:180px; flex:1 1 180px}
+  .field > label{font-weight:600; font-size:13px}
+  .filter-actions{display:flex; gap:8px; margin-left:auto; align-self:flex-end}
+  .check{display:inline-flex; align-items:center; gap:7px; font-size:12px; color:#fff;
+         background:var(--accent); border-radius:3px; padding:6px 9px; cursor:pointer}
+  .check input{margin:0}
+  .section-head{display:flex; align-items:center; gap:9px; padding:12px 15px;
+                border-bottom:1px solid var(--line); font-size:16px; font-weight:600}
+  .section-head .dot{width:9px; height:9px; border-radius:50%; background:var(--green); flex:none}
+  .section-head .ms.lead{color:var(--accent)}
+  .toolbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 15px}
+  .toolbar .spacer{margin-left:auto}
+  .btn-pill{border-radius:20px; background:#fff}
+  .btn-pill.on{background:#e8f4fb; border-color:#bce8f1; color:#31708f}
+  .table-scroll{overflow-x:auto}
+  table.grid{width:100%; border-collapse:collapse; min-width:1180px}
+  table.grid th, table.grid td{padding:11px 9px; text-align:left; vertical-align:top; font-size:13.5px}
+  table.grid th{font-weight:700; border-bottom:2px solid var(--line-strong); white-space:nowrap}
+  table.grid th .sortable{color:var(--muted); font-size:11px}
+  table.grid td{border-bottom:1px solid var(--line)}
+  table.grid td.num{font-variant-numeric:tabular-nums}
+  table.grid tbody tr:hover{background:#fafcfd}
+  .empty-note{padding:22px 15px; color:var(--muted); font-size:13px}
+  .cell-actions{display:flex; flex-direction:column; gap:5px; min-width:120px}
+  .status-cell{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 
   /* ---------- JILI.US notification ---------- */
   .notice-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px 20px; padding:6px 15px 14px; margin:0}
@@ -322,6 +352,7 @@
   </nav>
 
   <main class="content">
+   <div id="screen-setting">
     <div class="page-head">
       <h1 class="page">Simple Ranking Setting</h1>
       <span id="status-slot"></span>
@@ -334,7 +365,7 @@
       <div class="box-body">
         <div class="frow">
           <div class="flabel">ApiId <span class="req">*</span></div>
-          <div><select class="ctrl form-field"><option>20002_SSS_Single</option><option>20003_SSS_Multi</option></select></div>
+          <div><select class="ctrl form-field" id="api-id"><option>20002_SSS_Single</option><option>20003_SSS_Multi</option></select></div>
         </div>
         <div class="frow">
           <div class="flabel">AgentId <span class="req">*</span></div>
@@ -513,6 +544,87 @@
         <span class="ms">verified</span><span class="lang-en">Agree &amp; Approve</span><span class="lang-zh">同意簽核</span>
       </button>
     </div>
+   </div><!-- /#screen-setting -->
+
+   <!-- ================= Activity Setting list (after submitting) ================= -->
+   <div id="screen-list" hidden>
+    <div class="page-head"><h1 class="page">Activity Setting</h1></div>
+
+    <section class="box">
+      <div class="filters">
+        <div class="field">
+          <label for="l-status">Approval Status</label>
+          <select class="ctrl" id="l-status"><option>All</option><option>Unsigned</option><option>Pending Review</option><option>Approved</option></select>
+        </div>
+        <div class="field">
+          <label for="l-group">Event Group</label>
+          <select class="ctrl" id="l-group"><option>All</option><option>SSS_SSS_Single</option></select>
+        </div>
+        <div class="field">
+          <label for="l-name">Event Name</label>
+          <input class="ctrl" id="l-name" type="text" placeholder="Search">
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <label>Schedule Period</label>
+          <label class="check"><input type="checkbox"> Enable Time Filter</label>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-green" type="button"><span class="ms">search</span>Search</button>
+          <button class="btn" type="button"><span class="ms">close</span>Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="box plain">
+      <div class="box-body" style="display:flex; justify-content:flex-end; padding:14px 15px">
+        <button class="btn btn-info" id="add-activity" type="button">
+          <span class="ms">add_circle</span><span class="lang-en">Add Activity</span><span class="lang-zh">新增活動</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="box plain">
+      <div class="section-head"><span class="dot"></span>Running Activities</div>
+      <div class="table-scroll">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>Event ID</th><th>Event Name</th><th>Api Group</th><th>Api Name</th><th>Site</th>
+              <th>Event Game</th><th>Event Rule</th>
+              <th>Start Time <span class="sortable ms">swap_vert</span></th>
+              <th>End Time <span class="sortable ms">swap_vert</span></th>
+              <th>Total Ranking</th><th>Total Cost</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="12" class="empty-note" data-en="No running activities." data-zh="目前沒有進行中的活動。">No running activities.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="box plain">
+      <div class="section-head"><span class="ms lead">schedule</span>Scheduled Activities</div>
+      <div class="toolbar">
+        <button class="btn btn-pill btn-sm" type="button">Select All</button>
+        <button class="btn btn-pill btn-sm" type="button">Select Not Exported</button>
+        <span class="btn btn-pill btn-sm on" id="l-count">Selected: 0</span>
+        <span class="spacer"></span>
+        <button class="btn btn-green" type="button"><span class="ms">upload</span>Batch Export</button>
+      </div>
+      <div class="table-scroll">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>Select</th><th>Approval Status</th><th>Export Status</th><th>Event Name</th>
+              <th>Api Group</th><th>Api Name</th><th>Site</th><th>Event Game</th><th>Event Rule</th>
+              <th>Start Time <span class="sortable ms">swap_vert</span></th>
+              <th>End Time <span class="sortable ms">swap_vert</span></th>
+              <th>Total Ranking</th><th>Total Cost</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="sched-body"></tbody>
+        </table>
+      </div>
+    </section>
 
     <!-- ===== JILI.US review notification (spec V2 section 15) ===== -->
     <section class="box warn-top" id="jili-card" hidden style="margin-top:18px">
@@ -534,6 +646,7 @@
       </div>
       <div class="notice-done" id="jili-done"></div>
     </section>
+   </div><!-- /#screen-list -->
   </main>
 </div>
 
@@ -550,7 +663,7 @@
       <p class="lang-zh">排行榜活動設定已成功儲存，您可於簽核前繼續修改。</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-info" type="button" data-close data-en="OK" data-zh="確定">OK</button>
+      <button class="btn btn-info" id="ok-draft" type="button" data-close data-en="OK" data-zh="確定">OK</button>
     </div>
   </div>
 </div>
@@ -608,7 +721,7 @@
       </div>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-info" type="button" data-close data-en="OK" data-zh="確定">OK</button>
+      <button class="btn btn-info" id="ok-submitted" type="button" data-close data-en="OK" data-zh="確定">OK</button>
     </div>
   </div>
 </div>
@@ -662,7 +775,7 @@
       <p class="lang-zh">排行榜活動已完成簽核並通過審核，將依設定時間生效。</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-green" type="button" data-close data-en="OK" data-zh="確定">OK</button>
+      <button class="btn btn-green" id="ok-approved" type="button" data-close data-en="OK" data-zh="確定">OK</button>
     </div>
   </div>
 </div>
@@ -690,12 +803,13 @@
     <button type="button" id="helper-min" aria-label="Minimise">&minus;</button>
   </h2>
   <ol>
-    <li><span class="lang-en">Four buttons at the bottom: <b>Cancel · Save Draft · Submit for Review · Agree &amp; Approve</b>.</span><span class="lang-zh">頁尾四顆按鈕：<b>取消 · 儲存草稿 · 提交審查 · 同意簽核</b>。</span></li>
-    <li><span class="lang-en"><b>Save Draft</b> keeps the status at Draft — you can keep editing.</span><span class="lang-zh"><b>儲存草稿</b>：狀態留在 Draft，還能繼續改。</span></li>
-    <li><span class="lang-en"><b>Submit for Review</b> → Pending Review, the form locks, and the JILI.US notification appears below.</span><span class="lang-zh"><b>提交審查</b>：轉 Pending Review、表單鎖定，下方出現 JILI.US 通知。</span></li>
-    <li><span class="lang-en"><b>Agree &amp; Approve</b> → disclaimer → auto-approved, form locks.</span><span class="lang-zh"><b>同意簽核</b>：免責聲明 → 自動核准、表單鎖定。</span></li>
+    <li><span class="lang-en">Four buttons at the bottom: <b>Cancel · Save Draft · Submit for Review · Agree &amp; Approve</b>. Each one lands on the Activity Setting list.</span><span class="lang-zh">頁尾四顆按鈕：<b>取消 · 儲存草稿 · 提交審查 · 同意簽核</b>。送出後都會進到活動列表。</span></li>
+    <li><span class="lang-en"><b>Save Draft</b> → row shows <b>Unsigned</b>, Modify and Delete stay live. Modify goes back to this form.</span><span class="lang-zh"><b>儲存草稿</b> → 該列顯示 <b>尚未簽核</b>，Modify、Delete 維持亮燈；按 Modify 回到設定頁。</span></li>
+    <li><span class="lang-en"><b>Submit for Review</b> → row shows <b>Pending Review</b>, Modify and Delete grey out, JILI.US notification appears below the table.</span><span class="lang-zh"><b>提交審查</b> → 該列顯示 <b>等待審查</b>，Modify、Delete 灰階，表格下方出現 JILI.US 通知。</span></li>
+    <li><span class="lang-en">Approving as JILI.US moves that row to <b>Waiting to Start</b>.</span><span class="lang-zh">用 JILI.US 身分核准後，該列轉為 <b>等待活動開始</b>。</span></li>
+    <li><span class="lang-en"><b>Agree &amp; Approve</b> → disclaimer → row goes straight to <b>Waiting to Start</b>, buttons grey out.</span><span class="lang-zh"><b>同意簽核</b> → 免責聲明 → 該列直接是 <b>等待活動開始</b>，按鈕灰階。</span></li>
     <li><span class="lang-en">Time Zone in both dialogs follows the <b>GMT selector</b> in the header — change it and reopen to see it move.</span><span class="lang-zh">彈窗的 Time Zone 跟著右上角 <b>GMT 選單</b>走，改了再開就會變。</span></li>
-    <li><span class="lang-en">Games and prize rows are live — edits flow into the dialog summary.</span><span class="lang-zh">遊戲與獎項可編輯，會即時反映到彈窗摘要。</span></li>
+    <li><span class="lang-en">Games and prize rows are live — edits flow into the dialogs and into the list row.</span><span class="lang-zh">遊戲與獎項可編輯，會即時反映到彈窗與列表那一列。</span></li>
   </ol>
   <div class="helper-foot">
     <button class="btn btn-sm" id="do-reset" type="button" style="width:100%">
@@ -719,9 +833,18 @@
   }
 
   var T = {
-    draft:{en:"Draft / Unsigned", zh:"草稿 / 未簽核"},
-    pending:{en:"Pending Review", zh:"待審核"},
-    approved:{en:"Approved", zh:"已核准"},
+    /* the three states shown on the Activity Setting row */
+    st:{
+      unsigned:{en:"Unsigned", zh:"尚未簽核"},
+      pending:{en:"Pending Review", zh:"等待審查"},
+      waiting:{en:"Waiting to Start", zh:"等待活動開始"}
+    },
+    modify:{en:"Modify", zh:"修改"},
+    del:{en:"Delete", zh:"刪除"},
+    notExported:{en:"— Not Exported", zh:"— 未匯出"},
+    selected:{en:"Selected: ", zh:"已選："},
+    noRows:{en:"No scheduled activities.", zh:"目前沒有排程中的活動。"},
+    rowLocked:{en:"Settings are locked at this status.", zh:"此狀態下設定已鎖定，不可操作。"},
     savedAt:{en:"Draft saved ", zh:"草稿已儲存 "},
     lockedReview:{en:"Settings are locked while JILI.US reviews this event.", zh:"審核期間活動設定已鎖定，不可修改。"},
     lockedApproved:{en:"Approved — the settings can no longer be changed or cancelled.", zh:"已完成簽核 — 設定不可再修改或取消。"},
@@ -972,6 +1095,9 @@
       var g = gameById(id);
       return g ? (g.id + "_" + g.name) : id;
     });
+    var agent = document.getElementById("agent-id").value;
+    var apiName = document.getElementById("api-id").value;
+    var site = agent.split("@")[0];
     return {
       name: document.getElementById("event-name").value || t(T.none),
       gamesList: names,
@@ -981,7 +1107,10 @@
       tz: document.getElementById("tz").value,
       winners: document.getElementById("total-winners").textContent,
       cost: document.getElementById("total-cost").textContent,
-      agent: document.getElementById("agent-id").value,
+      agent: agent,
+      apiName: apiName,
+      site: site,
+      apiGroup: "SSS_" + apiName.replace(/^\d+_/, "") + "_" + site,
       operator: "SSS_Operation",
       eventId: "SSS-" + document.getElementById("event-name").value
     };
@@ -1013,20 +1142,24 @@
   }
 
   /* ---------------- status + locking ---------------- */
-  var status = "draft", locked = false, record = null, savedAt = null;
+  var status = "unsigned", locked = false, record = null, savedAt = null;
   var statusSlot = document.getElementById("status-slot");
   var savedNote  = document.getElementById("saved-note");
   var actionbar  = document.getElementById("actionbar");
-  var PILL = {draft:"pill-hold", pending:"pill-wait", approved:"pill-ok"};
-  var ICON = {draft:"edit_note", pending:"hourglass_top", approved:"check_circle"};
+  var PILL = {unsigned:"pill-hold", pending:"pill-wait", waiting:"pill-ok"};
+  var ICON = {unsigned:"cancel", pending:"hourglass_top", waiting:"schedule"};
+
+  function statusPill(st){
+    var pill = document.createElement("span");
+    pill.className = "pill " + PILL[st];
+    pill.innerHTML = '<span class="ms">' + ICON[st] + '</span>';
+    pill.appendChild(document.createTextNode(t(T.st[st])));
+    return pill;
+  }
 
   function renderStatus(){
     statusSlot.innerHTML = "";
-    var pill = document.createElement("span");
-    pill.className = "pill " + PILL[status];
-    pill.innerHTML = '<span class="ms">' + ICON[status] + '</span>';
-    pill.appendChild(document.createTextNode(t(T[status])));
-    statusSlot.appendChild(pill);
+    statusSlot.appendChild(statusPill(status));
 
     if (record) {
       var info = document.createElement("button");
@@ -1039,7 +1172,7 @@
       statusSlot.appendChild(info);
     }
 
-    savedNote.textContent = (status === "draft" && savedAt) ? (t(T.savedAt) + savedAt) : "";
+    savedNote.textContent = (status === "unsigned" && savedAt) ? (t(T.savedAt) + savedAt) : "";
 
     var lockNote = document.getElementById("lock-note");
     if (locked) {
@@ -1102,14 +1235,136 @@
            p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
   }
 
-  /* ---- A. Save Draft ---- */
+  /* ---------------- screens: setting page <-> activity list ---------------- */
+  var screenSetting = document.getElementById("screen-setting");
+  var screenList    = document.getElementById("screen-list");
+  var schedBody     = document.getElementById("sched-body");
+  var listCount     = document.getElementById("l-count");
+  var listRow       = null;   /* {status, data} — the row the submit produced */
+
+  function goList(){
+    renderList();
+    screenSetting.hidden = true;
+    screenList.hidden = false;
+    window.scrollTo(0, 0);
+  }
+  function goSetting(){
+    screenList.hidden = true;
+    screenSetting.hidden = false;
+    window.scrollTo(0, 0);
+  }
+
+  function rowBtn(cls, icon, label, disabled, onClick){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn btn-sm " + cls;
+    b.innerHTML = '<span class="ms">' + icon + '</span>';
+    b.appendChild(document.createTextNode(label));
+    if (disabled) { b.disabled = true; b.title = t(T.rowLocked); }
+    else if (onClick) b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function cell(tr, text, cls){
+    var td = document.createElement("td");
+    if (cls) td.className = cls;
+    td.textContent = text;
+    tr.appendChild(td);
+    return td;
+  }
+
+  function renderList(){
+    schedBody.innerHTML = "";
+    listCount.textContent = t(T.selected) + "0";
+
+    if (!listRow) {
+      var er = document.createElement("tr");
+      var ec = document.createElement("td");
+      ec.colSpan = 14; ec.className = "empty-note"; ec.textContent = t(T.noRows);
+      er.appendChild(ec); schedBody.appendChild(er);
+      return;
+    }
+
+    var d = listRow.data, st = listRow.status;
+    var tr = document.createElement("tr");
+
+    var pickTd = document.createElement("td");
+    var pick = document.createElement("input");
+    pick.type = "checkbox";
+    pick.setAttribute("aria-label", "Select " + d.name);
+    pick.addEventListener("change", function(){
+      listCount.textContent = t(T.selected) + (pick.checked ? "1" : "0");
+    });
+    pickTd.appendChild(pick);
+    tr.appendChild(pickTd);
+
+    var stTd = document.createElement("td");
+    stTd.className = "status-cell";
+    stTd.appendChild(statusPill(st));
+    if (record) {
+      var info = document.createElement("button");
+      info.type = "button";
+      info.className = "record-btn";
+      info.title = t(T.recordTip);
+      info.setAttribute("aria-label", t(T.recordTip));
+      info.innerHTML = '<span class="ms">info</span>';
+      info.addEventListener("click", showRecord);
+      stTd.appendChild(info);
+    }
+    tr.appendChild(stTd);
+
+    var exTd = document.createElement("td");
+    var ex = document.createElement("span");
+    ex.className = "pill pill-grey";
+    ex.textContent = t(T.notExported);
+    exTd.appendChild(ex);
+    tr.appendChild(exTd);
+
+    var games = d.gamesList || [];
+    cell(tr, d.name);
+    cell(tr, d.apiGroup);
+    cell(tr, d.apiName);
+    cell(tr, d.site);
+    cell(tr, games.length ? (games[0] + (games.length > 1 ? "  +" + (games.length - 1) : "")) : t(T.none));
+    cell(tr, d.rule);
+    cell(tr, d.start, "num");
+    cell(tr, d.end, "num");
+    cell(tr, d.winners, "num");
+    cell(tr, d.cost, "num");
+
+    /* Unsigned keeps Modify + Delete live; both locked states grey them out */
+    var live = (st === "unsigned");
+    var acts = document.createElement("td");
+    acts.className = "cell-actions";
+    acts.appendChild(rowBtn("btn-info", "edit", t(T.modify), !live, goSetting));
+    acts.appendChild(rowBtn("btn-red", "delete", t(T.del), !live, function(){
+      listRow = null;
+      savedAt = null;
+      renderStatus();
+      renderList();
+    }));
+    tr.appendChild(acts);
+
+    schedBody.appendChild(tr);
+  }
+
+  /* Add Activity starts a fresh setting page; Modify is the way back to
+     an existing draft */
+  document.getElementById("add-activity").addEventListener("click", function(){
+    location.reload();
+  });
+
+  /* ---- A. Save Draft — status stays Unsigned, nothing locks ---- */
   document.getElementById("btn-draft").addEventListener("click", function(){
     savedAt = stamp();
+    status = "unsigned";
+    listRow = {status:"unsigned", data:eventData()};
     renderStatus();
     open("m-draft");
   });
+  document.getElementById("ok-draft").addEventListener("click", goList);
 
-  /* ---- B. Submit for Review ---- */
+  /* ---- B. Submit for Review — Pending Review, settings lock ---- */
   document.getElementById("btn-submit").addEventListener("click", function(){
     fillSettings(document.querySelector("#m-submit [data-settings]"), eventData());
     open("m-submit");
@@ -1118,23 +1373,27 @@
     close();
     status = "pending";
     record = {kind:"submit", at:stamp(), data:eventData()};
+    listRow = {status:"pending", data:record.data};
     lockAll();
     showJili();
     open("m-submitted");
   });
+  document.getElementById("ok-submitted").addEventListener("click", goList);
 
-  /* ---- C. Agree & Approve ---- */
+  /* ---- C. Agree & Approve — auto approved, waiting for the start time ---- */
   document.getElementById("btn-agree").addEventListener("click", function(){
     fillSettings(document.querySelector("#m-agree [data-settings]"), eventData());
     open("m-agree");
   });
   document.getElementById("do-agree").addEventListener("click", function(){
     close();
-    status = "approved";
+    status = "waiting";
     record = {kind:"self", at:stamp(), data:eventData()};
+    listRow = {status:"waiting", data:record.data};
     lockAll();
     open("m-approved");
   });
+  document.getElementById("ok-approved").addEventListener("click", goList);
 
   document.getElementById("btn-cancel").addEventListener("click", function(){
     location.reload();
@@ -1157,7 +1416,7 @@
       [t(T.f.winners) + " / " + t(T.f.cost), d.winners + "  /  " + d.cost],
       [t(T.f.snapshot), d.rule + " · " + fmtGames(d.gamesList)],
       [t(T.f.consent), record.kind === "self" ? t(T.consentSelf) : t(T.consentSubmit)],
-      [t(T.f.result), status === "approved"
+      [t(T.f.result), status === "waiting"
           ? (record.kind === "self" ? t(T.resultAuto) : t(T.resultJili))
           : t(T.resultWait)]
     ];
@@ -1200,8 +1459,10 @@
 
   document.getElementById("jili-approve").addEventListener("click", function(){
     jiliDoneAt = stamp();
-    status = "approved";
+    status = "waiting";
+    if (listRow) listRow.status = "waiting";
     renderStatus();
+    renderList();
     this.disabled = true;
     jiliDone.textContent = t(T.jiliDoneHead) + jiliDoneAt + t(T.jiliDoneTail);
     jiliDone.style.display = "block";
@@ -1223,6 +1484,7 @@
       swaps[i].textContent = swaps[i].getAttribute("data-" + lang) || swaps[i].getAttribute("data-en");
     }
     renderStatus();
+    if (!screenList.hidden) renderList();
     if (!jiliCard.hidden) {
       var wasDone = jiliDone.style.display === "block";
       fillJili();
