@@ -50,7 +50,7 @@
 |---|---|---|
 | 儲存草稿 | 尚未簽核 | 亮燈，按 Modify 回到設定頁繼續改 |
 | 提交審查 | 等待審查 | 灰階 |
-| 同意簽核 | 等待活動開始 | 灰階 |
+| 同意簽核 | 已核准 | 灰階 |
 
 可操作的部分：Event Games 可搜尋／篩選 Slot、Fish／加入移除；Prize Settings 可增列、複製、刪除，Winner Count、Value、Total Winners、Total Cost 即時重算，並帶進彈窗摘要與列表那一列。狀態旁 info 圖示開啟簽核紀錄（Event ID、Agent ID、操作帳號、簽核時間、起訖時間、時區、獎池、簽核時設定內容、免責同意紀錄）。
 

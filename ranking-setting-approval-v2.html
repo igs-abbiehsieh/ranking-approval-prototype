@@ -778,7 +778,7 @@
     <li><span class="lang-en">Four buttons at the bottom: <b>Cancel · Save Draft · Submit for Review · Agree &amp; Approve</b>. Each one lands on the Activity Setting list.</span><span class="lang-zh">頁尾四顆按鈕：<b>取消 · 儲存草稿 · 提交審查 · 同意簽核</b>。送出後都會進到活動列表。</span></li>
     <li><span class="lang-en"><b>Save Draft</b> → row shows <b>Unsigned</b>, Modify and Delete stay live. Modify goes back to this form.</span><span class="lang-zh"><b>儲存草稿</b> → 該列顯示 <b>尚未簽核</b>，Modify、Delete 維持亮燈；按 Modify 回到設定頁。</span></li>
     <li><span class="lang-en"><b>Submit for Review</b> → row shows <b>Pending Review</b>, Modify and Delete grey out.</span><span class="lang-zh"><b>提交審查</b> → 該列顯示 <b>等待審查</b>，Modify、Delete 灰階。</span></li>
-    <li><span class="lang-en"><b>Agree &amp; Approve</b> → disclaimer → row goes straight to <b>Waiting to Start</b>, buttons grey out.</span><span class="lang-zh"><b>同意簽核</b> → 免責聲明 → 該列直接是 <b>等待活動開始</b>，按鈕灰階。</span></li>
+    <li><span class="lang-en"><b>Agree &amp; Approve</b> → disclaimer → row goes straight to <b>Approved</b>, buttons grey out.</span><span class="lang-zh"><b>同意簽核</b> → 免責聲明 → 該列直接是 <b>已核准</b>，按鈕灰階。</span></li>
     <li><span class="lang-en">Time Zone in both dialogs follows the <b>GMT selector</b> in the header — change it and reopen to see it move.</span><span class="lang-zh">彈窗的 Time Zone 跟著右上角 <b>GMT 選單</b>走，改了再開就會變。</span></li>
     <li><span class="lang-en">Games and prize rows are live — edits flow into the dialogs and into the list row.</span><span class="lang-zh">遊戲與獎項可編輯，會即時反映到彈窗與列表那一列。</span></li>
   </ol>
@@ -808,7 +808,7 @@
     st:{
       unsigned:{en:"Unsigned", zh:"尚未簽核"},
       pending:{en:"Pending Review", zh:"等待審查"},
-      waiting:{en:"Waiting to Start", zh:"等待活動開始"}
+      approved:{en:"Approved", zh:"已核准"}
     },
     modify:{en:"Modify", zh:"修改"},
     del:{en:"Delete", zh:"刪除"},
@@ -1115,8 +1115,8 @@
   var statusSlot = document.getElementById("status-slot");
   var savedNote  = document.getElementById("saved-note");
   var actionbar  = document.getElementById("actionbar");
-  var PILL = {unsigned:"pill-hold", pending:"pill-wait", waiting:"pill-ok"};
-  var ICON = {unsigned:"cancel", pending:"hourglass_top", waiting:"schedule"};
+  var PILL = {unsigned:"pill-hold", pending:"pill-wait", approved:"pill-ok"};
+  var ICON = {unsigned:"cancel", pending:"hourglass_top", approved:"check_circle"};
 
   function statusPill(st){
     var pill = document.createElement("span");
@@ -1348,16 +1348,16 @@
   });
   document.getElementById("ok-submitted").addEventListener("click", goList);
 
-  /* ---- C. Agree & Approve — auto approved, waiting for the start time ---- */
+  /* ---- C. Agree & Approve — auto approved by the system ---- */
   document.getElementById("btn-agree").addEventListener("click", function(){
     fillSettings(document.querySelector("#m-agree [data-settings]"), eventData());
     open("m-agree");
   });
   document.getElementById("do-agree").addEventListener("click", function(){
     close();
-    status = "waiting";
+    status = "approved";
     record = {kind:"self", at:stamp(), data:eventData()};
-    listRow = {status:"waiting", data:record.data};
+    listRow = {status:"approved", data:record.data};
     lockAll();
     open("m-approved");
   });
@@ -1384,7 +1384,7 @@
       [t(T.f.winners) + " / " + t(T.f.cost), d.winners + "  /  " + d.cost],
       [t(T.f.snapshot), d.rule + " · " + fmtGames(d.gamesList)],
       [t(T.f.consent), record.kind === "self" ? t(T.consentSelf) : t(T.consentSubmit)],
-      [t(T.f.result), status === "waiting"
+      [t(T.f.result), status === "approved"
           ? (record.kind === "self" ? t(T.resultAuto) : t(T.resultJili))
           : t(T.resultWait)]
     ];
