@@ -218,14 +218,6 @@
   .status-cell{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 
   /* ---------- JILI.US notification ---------- */
-  .notice-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px 20px; padding:6px 15px 14px; margin:0}
-  .notice-grid dt{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
-  .notice-grid dd{margin:3px 0 0; font-weight:600; overflow-wrap:anywhere}
-  .notice-foot{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:0 15px 15px}
-  .notice-foot .tag{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#b57206;
-                    border:1px dashed var(--warn); border-radius:3px; padding:3px 7px}
-  .notice-done{padding:0 15px 15px; color:var(--ok-ink); font-weight:600; display:none}
-
   /* ---------- modals ---------- */
   .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:900; display:flex;
             align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto}
@@ -626,26 +618,6 @@
       </div>
     </section>
 
-    <!-- ===== JILI.US review notification (spec V2 section 15) ===== -->
-    <section class="box warn-top" id="jili-card" hidden style="margin-top:18px">
-      <div class="box-title">
-        <span class="ms" style="color:var(--warn)">mark_email_unread</span>
-        <span class="lang-en">JILI.US Review Notification</span>
-        <span class="lang-zh">JILI.US 審查通知</span>
-      </div>
-      <dl class="notice-grid" id="jili-fields"></dl>
-      <div class="notice-foot">
-        <span class="tag lang-en">Simulated JILI.US side</span>
-        <span class="tag lang-zh">模擬 JILI.US 端</span>
-        <button class="btn btn-navy btn-sm" id="jili-detail" type="button">
-          <span class="ms">open_in_new</span><span class="lang-en">Review / Detail</span><span class="lang-zh">審核 / 明細</span>
-        </button>
-        <button class="btn btn-green btn-sm" id="jili-approve" type="button">
-          <span class="ms">check_circle</span><span class="lang-en">Approve as JILI.US</span><span class="lang-zh">以 JILI.US 身分核准</span>
-        </button>
-      </div>
-      <div class="notice-done" id="jili-done"></div>
-    </section>
    </div><!-- /#screen-list -->
   </main>
 </div>
@@ -805,8 +777,7 @@
   <ol>
     <li><span class="lang-en">Four buttons at the bottom: <b>Cancel · Save Draft · Submit for Review · Agree &amp; Approve</b>. Each one lands on the Activity Setting list.</span><span class="lang-zh">頁尾四顆按鈕：<b>取消 · 儲存草稿 · 提交審查 · 同意簽核</b>。送出後都會進到活動列表。</span></li>
     <li><span class="lang-en"><b>Save Draft</b> → row shows <b>Unsigned</b>, Modify and Delete stay live. Modify goes back to this form.</span><span class="lang-zh"><b>儲存草稿</b> → 該列顯示 <b>尚未簽核</b>，Modify、Delete 維持亮燈；按 Modify 回到設定頁。</span></li>
-    <li><span class="lang-en"><b>Submit for Review</b> → row shows <b>Pending Review</b>, Modify and Delete grey out, JILI.US notification appears below the table.</span><span class="lang-zh"><b>提交審查</b> → 該列顯示 <b>等待審查</b>，Modify、Delete 灰階，表格下方出現 JILI.US 通知。</span></li>
-    <li><span class="lang-en">Approving as JILI.US moves that row to <b>Waiting to Start</b>.</span><span class="lang-zh">用 JILI.US 身分核准後，該列轉為 <b>等待活動開始</b>。</span></li>
+    <li><span class="lang-en"><b>Submit for Review</b> → row shows <b>Pending Review</b>, Modify and Delete grey out.</span><span class="lang-zh"><b>提交審查</b> → 該列顯示 <b>等待審查</b>，Modify、Delete 灰階。</span></li>
     <li><span class="lang-en"><b>Agree &amp; Approve</b> → disclaimer → row goes straight to <b>Waiting to Start</b>, buttons grey out.</span><span class="lang-zh"><b>同意簽核</b> → 免責聲明 → 該列直接是 <b>等待活動開始</b>，按鈕灰階。</span></li>
     <li><span class="lang-en">Time Zone in both dialogs follows the <b>GMT selector</b> in the header — change it and reopen to see it move.</span><span class="lang-zh">彈窗的 Time Zone 跟著右上角 <b>GMT 選單</b>走，改了再開就會變。</span></li>
     <li><span class="lang-en">Games and prize rows are live — edits flow into the dialogs and into the list row.</span><span class="lang-zh">遊戲與獎項可編輯，會即時反映到彈窗與列表那一列。</span></li>
@@ -877,8 +848,6 @@
     resultAuto:{en:"Auto-approved by system", zh:"系統自動審核通過"},
     resultJili:{en:"Approved by JILI.US reviewer", zh:"JILI.US 人工審核通過"},
     resultWait:{en:"Waiting for JILI.US review", zh:"等待 JILI.US 審核"},
-    jiliDoneHead:{en:"Approved by JILI.US at ", zh:"已由 JILI.US 於 "},
-    jiliDoneTail:{en:" — the event takes effect at its start time.", zh:" 審核通過，活動將依設定時間生效。"},
     gamesCount:{en:" game(s)", zh:" 款遊戲"},
     noGames:{en:"No games selected.", zh:"尚未選擇遊戲。"}
   };
@@ -1375,7 +1344,6 @@
     record = {kind:"submit", at:stamp(), data:eventData()};
     listRow = {status:"pending", data:record.data};
     lockAll();
-    showJili();
     open("m-submitted");
   });
   document.getElementById("ok-submitted").addEventListener("click", goList);
@@ -1428,54 +1396,6 @@
     open("m-record");
   }
 
-  /* ---------------- JILI.US notification (spec V2 section 15) ---------------- */
-  var jiliCard = document.getElementById("jili-card");
-  var jiliFields = document.getElementById("jili-fields");
-  var jiliDone = document.getElementById("jili-done");
-  var jiliDoneAt = null;
-
-  var NOTICE = ["name","agent","games","rule","start","end","tz","winners","cost","operator"];
-
-  function fillJili(){
-    if (!record) return;
-    var d = record.data;
-    jiliFields.innerHTML = "";
-    NOTICE.forEach(function(k){
-      var dt = document.createElement("dt"); dt.textContent = t(T.f[k]);
-      var dd = document.createElement("dd"); dd.textContent = val(d, k);
-      jiliFields.appendChild(dt); jiliFields.appendChild(dd);
-    });
-    var dt2 = document.createElement("dt"); dt2.textContent = t(T.f.submitted);
-    var dd2 = document.createElement("dd"); dd2.textContent = record.at;
-    jiliFields.appendChild(dt2); jiliFields.appendChild(dd2);
-  }
-
-  function showJili(){
-    fillJili();
-    jiliDone.style.display = "none";
-    document.getElementById("jili-approve").disabled = false;
-    jiliCard.hidden = false;
-  }
-
-  document.getElementById("jili-approve").addEventListener("click", function(){
-    jiliDoneAt = stamp();
-    status = "waiting";
-    if (listRow) listRow.status = "waiting";
-    renderStatus();
-    renderList();
-    this.disabled = true;
-    jiliDone.textContent = t(T.jiliDoneHead) + jiliDoneAt + t(T.jiliDoneTail);
-    jiliDone.style.display = "block";
-  });
-  document.getElementById("jili-detail").addEventListener("click", showRecord);
-
-  /* the header GMT selector drives the Time Zone shown in both dialogs */
-  document.getElementById("tz").addEventListener("change", function(){
-    if (!record) return;
-    record.data.tz = this.value;
-    fillJili();
-  });
-
   /* ---------------- language ---------------- */
   function applyLang(){
     document.documentElement.setAttribute("data-lang", lang);
@@ -1485,15 +1405,6 @@
     }
     renderStatus();
     if (!screenList.hidden) renderList();
-    if (!jiliCard.hidden) {
-      var wasDone = jiliDone.style.display === "block";
-      fillJili();
-      if (wasDone) {
-        jiliDone.textContent = t(T.jiliDoneHead) + jiliDoneAt + t(T.jiliDoneTail);
-        jiliDone.style.display = "block";
-        document.getElementById("jili-approve").disabled = true;
-      }
-    }
   }
 
   /* ---------------- prototype helper ---------------- */
