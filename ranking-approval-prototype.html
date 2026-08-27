@@ -1,0 +1,967 @@
+<title>Leaderboard Approval Flow</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=swap">
+<style>
+  /* ---------------------------------------------------------------
+     Ranking Approval prototype — mirrors the SSS_Operation backend
+     (AdminLTE "skin-red"). Single visual world on purpose: this page
+     must look like the product it proposes a change to, so every
+     colour is painted explicitly and no theme swap is offered.
+  ----------------------------------------------------------------*/
+  :root{
+    --red:#dd4b39; --red-dark:#d73925;
+    --nav:#222d32; --nav-hover:#1e282c; --nav-sub:#2c3b41;
+    --nav-text:#b8c7ce; --nav-sub-text:#8aa4af;
+    --ground:#ecf0f5; --surface:#fff;
+    --line:#f4f4f4; --line-strong:#ddd;
+    --ink:#333; --ink-soft:#555; --muted:#999;
+    --accent:#3c8dbc;
+    --green:#00a65a; --green-dark:#008d4c;
+    --info:#00acd6; --info-dark:#0097bc;
+    --warn:#f39c12;
+    --ok-bg:#dff0d8; --ok-ink:#3c763d; --ok-line:#c5e0b4;
+    --wait-bg:#d9edf7; --wait-ink:#31708f; --wait-line:#bce8f1;
+    --hold-bg:#fcf8e3; --hold-ink:#8a6d3b; --hold-line:#faebcc;
+    --shadow:0 1px 1px rgba(0,0,0,.1);
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"Source Sans 3","Source Sans Pro","Segoe UI",Tahoma,sans-serif;
+    font-size:14px; line-height:1.42857;
+    -webkit-font-smoothing:antialiased;
+  }
+  .ms{
+    font-family:"Material Symbols Outlined";
+    font-weight:400; font-style:normal; font-size:17px; line-height:1;
+    letter-spacing:normal; text-transform:none; white-space:nowrap;
+    word-wrap:normal; direction:ltr; vertical-align:-3px;
+    -webkit-font-feature-settings:'liga'; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;
+  }
+  .no-icons .ms{display:none}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+
+  /* ---------- shell ---------- */
+  .shell{display:grid; grid-template-columns:230px 1fr; grid-template-rows:50px auto; min-height:100vh}
+  .logo{
+    grid-area:1/1; background:var(--red-dark); color:#fff;
+    display:flex; align-items:center; padding:0 15px; font-size:20px; font-weight:700;
+  }
+  .navbar{
+    grid-area:1/2; background:var(--red); color:#fff;
+    display:flex; align-items:center; gap:6px; padding:0 12px 0 0;
+  }
+  .navbar .burger{
+    background:none; border:0; color:#fff; padding:15px; cursor:pointer; line-height:1;
+  }
+  .navbar .burger:hover{background:var(--red-dark)}
+  .nav-right{margin-left:auto; display:flex; align-items:center; gap:2px; flex-wrap:wrap}
+  .nav-link{
+    display:inline-flex; align-items:center; gap:6px; color:#fff; text-decoration:none;
+    padding:15px 12px; background:none; border:0; cursor:pointer;
+    font-family:inherit; font-size:14px;
+  }
+  .nav-link:hover{background:var(--red-dark)}
+  .nav-clock{display:inline-flex; align-items:center; gap:6px; padding:15px 12px; font-variant-numeric:tabular-nums}
+  .nav-select{
+    font-family:inherit; font-size:13px; padding:4px 6px; border:1px solid rgba(0,0,0,.15);
+    border-radius:3px; background:#fff; color:var(--ink); margin:0 3px;
+  }
+
+  /* ---------- sidebar ---------- */
+  .sidebar{grid-area:2/1; background:var(--nav); padding-bottom:40px}
+  .who{color:#fff; text-align:center; padding:14px 10px; font-weight:600}
+  .side-search{display:flex; margin:0 12px 12px}
+  .side-search input{
+    flex:1; min-width:0; background:#374850; border:1px solid #374850; color:#fff;
+    padding:7px 10px; font-family:inherit; font-size:13px; border-radius:2px 0 0 2px;
+  }
+  .side-search input::placeholder{color:#8aa4af}
+  .side-search button{
+    background:#374850; border:1px solid #374850; border-left:0; color:#8aa4af;
+    padding:0 10px; cursor:pointer; border-radius:0 2px 2px 0;
+  }
+  .side-head{color:#4b646f; font-size:12px; padding:10px 15px; background:#1a2226}
+  .side-list{list-style:none; margin:0; padding:0}
+  .side-list a{
+    display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none;
+    padding:12px 12px 12px 15px; border-left:3px solid transparent; font-size:14px;
+  }
+  .side-list a:hover{color:#fff; background:var(--nav-hover)}
+  .side-list a .chev{margin-left:auto; font-size:14px; opacity:.7}
+  .side-list li.open > a{color:#fff; background:var(--nav-hover); border-left-color:var(--red)}
+  .sub{list-style:none; margin:0; padding:8px 0; background:var(--nav-sub)}
+  .sub a{color:var(--nav-sub-text); padding:8px 12px 8px 30px; border-left:0}
+  .sub a:hover{color:#fff; background:transparent}
+  .sub li.active a{color:#fff}
+
+  /* ---------- content ---------- */
+  .content{grid-area:2/2; padding:15px 15px 40px; min-width:0}
+  h1.page{font-size:24px; font-weight:300; margin:2px 0 18px}
+  .box{background:var(--surface); box-shadow:var(--shadow); margin-bottom:18px; border-top:3px solid var(--accent)}
+  .box.plain{border-top:0}
+  .box-body{padding:14px 15px}
+  .filters{display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end}
+  .field{display:flex; flex-direction:column; gap:6px; min-width:180px; flex:1 1 180px}
+  .field > label{font-weight:600; font-size:13px}
+  .ctrl{
+    font-family:inherit; font-size:14px; color:var(--ink-soft); background:#fff;
+    border:1px solid var(--line-strong); border-radius:3px; padding:7px 10px; width:100%;
+  }
+  .ctrl::placeholder{color:#bbb}
+  .filter-actions{display:flex; gap:8px; margin-left:auto; align-self:flex-end}
+  .check{display:inline-flex; align-items:center; gap:7px; font-size:12px; color:#fff;
+    background:var(--accent); border-radius:3px; padding:6px 9px; cursor:pointer}
+  .check input{margin:0}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    font-family:inherit; font-size:14px; line-height:1.42857; font-weight:400;
+    padding:6px 12px; border-radius:3px; border:1px solid var(--line-strong); cursor:pointer;
+    background:#f4f4f4; color:#444; white-space:nowrap;
+  }
+  .btn:hover{background:#e7e7e7}
+  .btn-green{background:var(--green); border-color:var(--green-dark); color:#fff}
+  .btn-green:hover{background:var(--green-dark)}
+  .btn-info{background:var(--info); border-color:var(--info-dark); color:#fff}
+  .btn-info:hover{background:var(--info-dark)}
+  .btn-red{background:var(--red); border-color:var(--red-dark); color:#fff}
+  .btn-red:hover{background:var(--red-dark)}
+  .btn-navy{background:#3c5a75; border-color:#2f4a62; color:#fff}
+  .btn-navy:hover{background:#2f4a62}
+  .btn-sm{font-size:12px; padding:5px 10px}
+  .btn-pill{border-radius:20px; background:#fff}
+  .btn-pill.on{background:#e8f4fb; border-color:#bce8f1; color:#31708f}
+  .btn[disabled]{opacity:.5; cursor:not-allowed; background:#f4f4f4; color:#777; border-color:var(--line-strong)}
+  .btn[disabled]:hover{background:#f4f4f4}
+
+  /* ---------- section headers ---------- */
+  .section-head{
+    display:flex; align-items:center; gap:9px; padding:12px 15px;
+    border-bottom:1px solid var(--line); font-size:16px; font-weight:600;
+  }
+  .section-head .dot{width:9px; height:9px; border-radius:50%; background:var(--green); flex:none}
+  .section-head .ms.lead{color:var(--accent)}
+  .section-head .fold{margin-left:auto; background:none; border:0; color:var(--muted); cursor:pointer; padding:4px}
+  .toolbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 15px}
+  .toolbar .spacer{margin-left:auto}
+
+  /* ---------- table ---------- */
+  .table-scroll{overflow-x:auto}
+  table.grid{width:100%; border-collapse:collapse; min-width:1180px}
+  table.grid th, table.grid td{padding:11px 9px; text-align:left; vertical-align:top; font-size:13.5px}
+  table.grid th{font-weight:700; border-bottom:2px solid var(--line-strong); white-space:nowrap}
+  table.grid th .sortable{color:var(--muted); font-size:11px}
+  table.grid td{border-bottom:1px solid var(--line)}
+  table.grid tbody tr:hover{background:#fafcfd}
+  table.grid td.num{font-variant-numeric:tabular-nums}
+  .empty-note{padding:22px 15px; color:var(--muted); font-size:13px}
+  .cell-actions{display:flex; flex-direction:column; gap:5px; align-items:stretch; min-width:158px}
+
+  /* ---------- status pills ---------- */
+  .pill{
+    display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:3px;
+    font-size:12px; font-weight:600; border:1px solid transparent; white-space:nowrap;
+  }
+  .pill .ms{font-size:14px; vertical-align:-2px}
+  .pill-hold{background:var(--hold-bg); color:var(--hold-ink); border-color:var(--hold-line)}
+  .pill-wait{background:var(--wait-bg); color:var(--wait-ink); border-color:var(--wait-line)}
+  .pill-ok{background:var(--ok-bg); color:var(--ok-ink); border-color:var(--ok-line)}
+  .pill-grey{background:#f4f4f4; color:var(--muted); border-color:#e3e3e3}
+  .status-cell{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+  .record-btn{background:none; border:0; padding:0; cursor:pointer; color:var(--accent); line-height:1}
+  .record-btn .ms{font-size:16px}
+
+  /* ---------- JILI.US notification card ---------- */
+  .notice{border-top:3px solid var(--warn)}
+  .notice .section-head .ms.lead{color:var(--warn)}
+  .notice-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px 20px;
+    padding:14px 15px; margin:0;
+  }
+  .notice-grid dt{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .notice-grid dd{margin:3px 0 0; font-weight:600; font-variant-numeric:tabular-nums}
+  .notice-foot{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:0 15px 15px}
+  .notice-foot .tag{
+    font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#b57206;
+    border:1px dashed var(--warn); border-radius:3px; padding:3px 7px;
+  }
+  .notice-done{padding:0 15px 15px; color:var(--ok-ink); font-weight:600; display:none}
+
+  /* ---------- modals ---------- */
+  .backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:900;
+    display:flex; align-items:flex-start; justify-content:center; padding:40px 16px;
+    overflow-y:auto;
+  }
+  .backdrop[hidden]{display:none}
+  .dialog{
+    background:#fff; width:100%; max-width:620px; border-radius:4px; color:var(--ink);
+    box-shadow:0 5px 15px rgba(0,0,0,.5); animation:rise .18s ease-out;
+  }
+  .dialog.narrow{max-width:440px}
+  @keyframes rise{from{transform:translateY(-18px); opacity:0} to{transform:none; opacity:1}}
+  @media (prefers-reduced-motion:reduce){.dialog{animation:none}}
+  .dialog-head{
+    display:flex; align-items:center; gap:9px; padding:14px 16px; border-bottom:1px solid #e5e5e5;
+    font-size:17px; font-weight:600;
+  }
+  .dialog-head .ms{font-size:20px}
+  .dialog-head .x{margin-left:auto; background:none; border:0; font-size:20px; color:#999; cursor:pointer; line-height:1}
+  .dialog-body{padding:16px}
+  .dialog-copy{max-width:62ch}
+  .dialog-body p{margin:0 0 11px}
+  .dialog-body p:last-child{margin-bottom:0}
+  .dialog-body strong{color:#b03a2c}
+  .dialog-foot{display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid #e5e5e5}
+  .dialog-head.tone-ok{color:var(--ok-ink)} .dialog-head.tone-ok .ms{color:var(--green)}
+  .dialog-head.tone-wait{color:var(--wait-ink)} .dialog-head.tone-wait .ms{color:var(--accent)}
+  .dialog-head.tone-warn .ms{color:var(--warn)}
+  .record-list{margin:0; display:grid; gap:10px}
+  .record-list dt{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .record-list dd{margin:2px 0 0; font-weight:600}
+
+  /* ---------- prototype helper (not part of the product UI) ---------- */
+  .helper{
+    position:fixed; right:16px; bottom:16px; z-index:800; width:290px;
+    background:#1f2933; color:#d7e0e6; border-radius:5px; box-shadow:0 6px 22px rgba(0,0,0,.35);
+    font-size:12.5px;
+  }
+  .helper h2{
+    font-size:12px; letter-spacing:.08em; text-transform:uppercase; margin:0;
+    padding:10px 12px; border-bottom:1px solid #2f3b45; color:#8fb8d2;
+    display:flex; align-items:center; gap:7px;
+  }
+  .helper h2 button{margin-left:auto; background:none; border:0; color:#7f8f9a; cursor:pointer; line-height:1; font-size:16px}
+  .helper ol{margin:0; padding:11px 12px 11px 28px; display:grid; gap:6px}
+  .helper b{color:#fff}
+  .helper-foot{padding:0 12px 12px}
+  .helper-open{
+    position:fixed; right:16px; bottom:16px; z-index:800; display:none;
+    background:#1f2933; color:#d7e0e6; border:0; border-radius:20px; padding:9px 15px;
+    font-family:inherit; font-size:12.5px; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.35);
+  }
+
+  .lang-zh{display:none}
+  html[data-lang="zh"] .lang-zh{display:block}
+  html[data-lang="zh"] .lang-en{display:none}
+  html[data-lang="zh"] span.lang-zh{display:inline}
+  html[data-lang="zh"] li .lang-zh{display:list-item}
+
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr}
+    .logo{display:none}
+    .navbar{grid-area:1/1}
+    .sidebar{display:none}
+    .content{grid-area:2/1}
+    .helper{left:16px; right:16px; width:auto}
+  }
+</style>
+
+<div class="shell">
+  <div class="logo">Management</div>
+
+  <div class="navbar">
+    <button class="burger" type="button" aria-label="Toggle menu"><span class="ms">menu</span></button>
+    <div class="nav-right">
+      <a class="nav-link" href="#"><span class="ms">home</span>Home</a>
+      <a class="nav-link" href="#"><span class="ms">key</span>Change Password</a>
+      <span class="nav-clock"><span class="ms">schedule</span><span id="clock">2026-08-27 11:55:02</span></span>
+      <select class="nav-select" aria-label="Timezone">
+        <option>GMT+8</option><option>GMT+0</option><option>GMT-4</option>
+      </select>
+      <select class="nav-select" id="lang" aria-label="Language">
+        <option value="en">English</option>
+        <option value="zh">繁體中文</option>
+      </select>
+      <a class="nav-link" href="#"><span class="ms">logout</span>Logout</a>
+    </div>
+  </div>
+
+  <nav class="sidebar">
+    <div class="who">SSS_Operation</div>
+    <div class="side-search">
+      <input type="search" placeholder="Search..." aria-label="Search menu">
+      <button type="button" aria-label="Search"><span class="ms">search</span></button>
+    </div>
+    <div class="side-head">Main Menu</div>
+    <ul class="side-list">
+      <li><a href="#"><span class="ms">admin_panel_settings</span>Admin Account<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">groups</span>Player Account<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">bar_chart</span>Report<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">campaign</span>Game Cross Promotion<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">build</span>Maintenance<span class="ms chev">chevron_right</span></a></li>
+      <li class="open">
+        <a href="#"><span class="ms">leaderboard</span>Ranking Service<span class="ms chev">expand_more</span></a>
+        <ul class="sub">
+          <li><a href="#"><span class="ms">hub</span>Event List</a></li>
+          <li><a href="#"><span class="ms">settings</span>Event Setting</a></li>
+          <li><a href="#"><span class="ms">edit_note</span>Ranking Approval</a></li>
+          <li class="active"><a href="#"><span class="ms">radio_button_checked</span>SSS Ranking Setting</a></li>
+          <li><a href="#"><span class="ms">flag</span>SSS Ranking List</a></li>
+          <li><a href="#"><span class="ms">group</span>Agent Group Management</a></li>
+          <li><a href="#"><span class="ms">block</span>Ranking Blacklist Setting</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="ms">dns</span>Platform Service<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">notifications</span>Smart Notice<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">savings</span>JP Tool_unregulated<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">redeem</span>GiftCode Tool<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">casino</span>FreeSpin Tool<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">tune</span>Game Bet Setting<span class="ms chev">chevron_right</span></a></li>
+    </ul>
+  </nav>
+
+  <main class="content">
+    <h1 class="page">Activity Setting</h1>
+
+    <section class="box">
+      <div class="box-body filters">
+        <div class="field">
+          <label for="f-status">Approval Status</label>
+          <select class="ctrl" id="f-status">
+            <option value="all">All</option>
+            <option value="unsigned">Unsigned</option>
+            <option value="pending">Pending Review</option>
+            <option value="approved">Approved</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-group">Event Group</label>
+          <select class="ctrl" id="f-group"><option>All</option><option>SSS_SSS_Single</option></select>
+        </div>
+        <div class="field">
+          <label for="f-name">Event Name</label>
+          <input class="ctrl" id="f-name" type="text" placeholder="Search">
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <label>Schedule Period</label>
+          <label class="check"><input type="checkbox"> Enable Time Filter</label>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-green" id="do-search" type="button"><span class="ms">search</span>Search</button>
+          <button class="btn" id="do-reset-filter" type="button"><span class="ms">close</span>Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="box plain">
+      <div class="box-body" style="display:flex; justify-content:flex-end">
+        <button class="btn btn-info" type="button"><span class="ms">add_circle</span>Add Activity</button>
+      </div>
+    </section>
+
+    <section class="box plain">
+      <div class="section-head">
+        <span class="dot"></span>Running Activities
+        <button class="fold" type="button" aria-label="Collapse section"><span class="ms">expand_less</span></button>
+      </div>
+      <div class="table-scroll">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>Event ID</th><th>Event Name</th><th>Api Group</th><th>Api Name</th><th>Site</th>
+              <th>Event Game</th><th>Event Rule</th>
+              <th>Start Time <span class="sortable ms">swap_vert</span></th>
+              <th>End Time <span class="sortable ms">swap_vert</span></th>
+              <th>Total Ranking</th><th>Total Cost</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="12" class="empty-note">No running activities.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="box plain">
+      <div class="section-head">
+        <span class="ms lead">schedule</span>Scheduled Activities
+        <button class="fold" type="button" aria-label="Collapse section"><span class="ms">expand_less</span></button>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-pill btn-sm" id="sel-all" type="button">Select All</button>
+        <button class="btn btn-pill btn-sm" id="sel-ne" type="button">Select Not Exported</button>
+        <span class="btn btn-pill btn-sm on" id="sel-count">Selected: 0</span>
+        <span class="spacer"></span>
+        <button class="btn btn-green" type="button"><span class="ms">upload</span>Batch Export</button>
+      </div>
+
+      <div class="table-scroll">
+        <table class="grid" id="grid">
+          <thead>
+            <tr>
+              <th>Select</th><th>Approval Status</th><th>Export Status</th><th>Event Name</th>
+              <th>Api Group</th><th>Api Name</th><th>Site</th><th>Event Game</th><th>Event Rule</th>
+              <th>Start Time <span class="sortable ms">swap_vert</span></th>
+              <th>End Time <span class="sortable ms">swap_vert</span></th>
+              <th>Total Ranking</th><th>Total Cost</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-row="r1" data-status="unsigned"
+                data-name="SSS_Test_0827" data-site="Aloha_SC" data-game="260_Golden Empire"
+                data-rule="Accumulated Winning" data-start="2026-08-27 12:10" data-end="2026-08-27 12:20"
+                data-ranking="1" data-cost="10" data-operator="SSS_Operation">
+              <td><input type="checkbox" class="pick" aria-label="Select SSS_Test_0827"></td>
+              <td class="status-cell"></td>
+              <td><span class="pill pill-grey" data-en="— Not Exported" data-zh="— 未匯出">— Not Exported</span></td>
+              <td>SSS_Test_0827</td>
+              <td>SSS_SSS_Single_Aloha_SC</td>
+              <td>20002_SSS_Single</td>
+              <td>Aloha_SC</td>
+              <td>260_Golden Empire</td>
+              <td>Accumulated Winning</td>
+              <td class="num">2026-08-27 12:10</td>
+              <td class="num">2026-08-27 12:20</td>
+              <td class="num">1</td>
+              <td class="num">10</td>
+              <td class="cell-actions"></td>
+            </tr>
+            <tr data-row="r2" data-status="pending"
+                data-name="SSS_Test_0828_Fortune" data-site="Fortune_SC" data-game="118_Fortune Gems"
+                data-rule="Accumulated Winning" data-start="2026-08-28 12:00" data-end="2026-08-28 20:00"
+                data-ranking="3" data-cost="300" data-operator="SSS_Operation"
+                data-record-at="2026-08-27 10:32:14" data-record-kind="submit">
+              <td><input type="checkbox" class="pick" aria-label="Select SSS_Test_0828_Fortune"></td>
+              <td class="status-cell"></td>
+              <td><span class="pill pill-grey" data-en="— Not Exported" data-zh="— 未匯出">— Not Exported</span></td>
+              <td>SSS_Test_0828_Fortune</td>
+              <td>SSS_SSS_Single_Fortune_SC</td>
+              <td>20002_SSS_Single</td>
+              <td>Fortune_SC</td>
+              <td>118_Fortune Gems</td>
+              <td>Accumulated Winning</td>
+              <td class="num">2026-08-28 12:00</td>
+              <td class="num">2026-08-28 20:00</td>
+              <td class="num">3</td>
+              <td class="num">300</td>
+              <td class="cell-actions"></td>
+            </tr>
+            <tr data-row="r3" data-status="approved"
+                data-name="SSS_Test_0826_Boxing" data-site="Boxing_SC" data-game="275_Boxing King"
+                data-rule="Total Bet" data-start="2026-08-29 00:00" data-end="2026-08-29 23:59"
+                data-ranking="10" data-cost="1000" data-operator="SSS_Operation"
+                data-record-at="2026-08-26 16:05:41" data-record-kind="self">
+              <td><input type="checkbox" class="pick" aria-label="Select SSS_Test_0826_Boxing"></td>
+              <td class="status-cell"></td>
+              <td><span class="pill pill-ok" data-en="Exported" data-zh="已匯出">Exported</span></td>
+              <td>SSS_Test_0826_Boxing</td>
+              <td>SSS_SSS_Single_Boxing_SC</td>
+              <td>20002_SSS_Single</td>
+              <td>Boxing_SC</td>
+              <td>275_Boxing King</td>
+              <td>Total Bet</td>
+              <td class="num">2026-08-29 00:00</td>
+              <td class="num">2026-08-29 23:59</td>
+              <td class="num">10</td>
+              <td class="num">1000</td>
+              <td class="cell-actions"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- What JILI.US receives after "Submit for Review" (spec section 6) -->
+    <section class="box notice" id="jili-card" hidden>
+      <div class="section-head">
+        <span class="ms lead">mark_email_unread</span>
+        <span class="lang-en">JILI.US Review Notification</span>
+        <span class="lang-zh">JILI.US 審查通知</span>
+      </div>
+      <dl class="notice-grid" id="jili-fields"></dl>
+      <div class="notice-foot">
+        <span class="tag lang-en">Simulated JILI.US side</span>
+        <span class="tag lang-zh">模擬 JILI.US 端</span>
+        <button class="btn btn-navy btn-sm" id="jili-detail" type="button">
+          <span class="ms">open_in_new</span><span class="lang-en">Review / Detail</span><span class="lang-zh">審核 / 明細</span>
+        </button>
+        <button class="btn btn-green btn-sm" id="jili-approve" type="button">
+          <span class="ms">check_circle</span><span class="lang-en">Approve as JILI.US</span><span class="lang-zh">以 JILI.US 身分核准</span>
+        </button>
+      </div>
+      <div class="notice-done" id="jili-done"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ Path A: confirmation / disclaimer ============ -->
+<div class="backdrop" id="m-confirm" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="m-confirm-title">
+    <div class="dialog-head tone-warn" id="m-confirm-title">
+      <span class="ms">gavel</span>
+      <span class="lang-en">Leaderboard Event Confirmation</span>
+      <span class="lang-zh">排行榜活動確認</span>
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <div class="dialog-copy">
+        <div class="lang-en">
+          <p>I confirm that all event settings have been reviewed and are correct.</p>
+          <p>Our company agrees to take full responsibility for the prize pool, reward distribution, and any related issues or disputes arising from this event.</p>
+          <p>JILI.US only provides the leaderboard system and is not responsible for this event or any related liabilities.</p>
+          <p><strong>Once submitted, the event will be automatically approved and scheduled based on the configured start time. No further changes or cancellation will be allowed.</strong></p>
+        </div>
+        <div class="lang-zh">
+          <p>我已確認本次活動設定無誤，並同意由本公司自行承擔本次活動之獎池、獎勵發放及相關責任或爭議。</p>
+          <p>JILI.US 僅提供排行榜系統服務，不承擔本活動之相關責任。</p>
+          <p><strong>送出後將自動完成審核，活動依設定時間生效，且不得再修改或取消。</strong></p>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" type="button" data-close data-en="Cancel" data-zh="取消">Cancel</button>
+      <button class="btn btn-green" id="do-agree" type="button">
+        <span class="ms">check</span><span class="lang-en">Agree &amp; Submit</span><span class="lang-zh">同意並送出</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="m-approved" hidden>
+  <div class="dialog narrow" role="dialog" aria-modal="true" aria-labelledby="m-approved-title">
+    <div class="dialog-head tone-ok" id="m-approved-title">
+      <span class="ms">task_alt</span>
+      <span class="lang-en">Approval Completed</span>
+      <span class="lang-zh">簽核完成</span>
+    </div>
+    <div class="dialog-body dialog-copy">
+      <p class="lang-en">The event has been approved and will go live according to the configured start time.</p>
+      <p class="lang-zh">活動已通過審核，將依設定時間生效。</p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-green" type="button" data-close data-en="OK" data-zh="確定">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Path B: submit for JILI.US review ============ -->
+<div class="backdrop" id="m-submit" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="m-submit-title">
+    <div class="dialog-head tone-wait" id="m-submit-title">
+      <span class="ms">forward_to_inbox</span>
+      <span class="lang-en">Submit for JILI.US Review</span>
+      <span class="lang-zh">提交 JILI.US 審查</span>
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <div class="dialog-copy">
+        <div class="lang-en">
+          <p>This event will be submitted to JILI.US for review and will only be approved after the review is completed.</p>
+          <p>Please allow at least <strong>1 business day</strong> for the review process. For urgent requests, please contact your Account Manager (AM).</p>
+        </div>
+        <div class="lang-zh">
+          <p>本活動將提交 JILI.US 審核，審核通過後才會生效。</p>
+          <p>審核作業至少需 <strong>1 個工作天</strong>。如有緊急需求，請聯繫您的 Account Manager（AM）。</p>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" type="button" data-close data-en="Cancel" data-zh="取消">Cancel</button>
+      <button class="btn btn-info" id="do-submit" type="button">
+        <span class="ms">send</span><span class="lang-en">Submit for Review</span><span class="lang-zh">提交審查</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="m-submitted" hidden>
+  <div class="dialog narrow" role="dialog" aria-modal="true" aria-labelledby="m-submitted-title">
+    <div class="dialog-head tone-wait" id="m-submitted-title">
+      <span class="ms">outgoing_mail</span>
+      <span class="lang-en">Review Request Submitted</span>
+      <span class="lang-zh">已提交審查</span>
+    </div>
+    <div class="dialog-body dialog-copy">
+      <div class="lang-en">
+        <p>Your request has been submitted to JILI.US successfully.</p>
+        <p>Please wait for the review result. Once approved, the event will go live according to the configured start time.</p>
+      </div>
+      <div class="lang-zh">
+        <p>JILI.US 已收到您的申請，請等待審核結果。</p>
+        <p>審核通過後，活動將依設定時間生效。</p>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-info" type="button" data-close data-en="OK" data-zh="確定">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Approval record (spec section 3.4) ============ -->
+<div class="backdrop" id="m-record" hidden>
+  <div class="dialog narrow" role="dialog" aria-modal="true" aria-labelledby="m-record-title">
+    <div class="dialog-head" id="m-record-title">
+      <span class="ms">history</span>
+      <span class="lang-en">Approval Record</span>
+      <span class="lang-zh">簽核紀錄</span>
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-body"><dl class="record-list" id="record-fields"></dl></div>
+    <div class="dialog-foot">
+      <button class="btn" type="button" data-close data-en="Close" data-zh="關閉">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ prototype helper — not part of the product UI ============ -->
+<button class="helper-open" id="helper-open" type="button">Prototype</button>
+<aside class="helper" id="helper">
+  <h2><span class="ms">science</span><span class="lang-en">Prototype guide</span><span class="lang-zh">操作說明</span>
+    <button type="button" id="helper-min" aria-label="Minimise">&minus;</button>
+  </h2>
+  <ol>
+    <li><span class="lang-en">Row 1 is <b>Unsigned</b> — all four buttons show.</span><span class="lang-zh">第 1 列是 <b>Unsigned</b>，四顆按鈕全開。</span></li>
+    <li><span class="lang-en">Path A — <b>Confirm &amp; Approve</b> → disclaimer → auto-approved.</span><span class="lang-zh">路徑 A — <b>同意生效</b> → 免責聲明 → 自動核准。</span></li>
+    <li><span class="lang-en">Path B — <b>Submit for Review</b> → the JILI.US notification appears under the table.</span><span class="lang-zh">路徑 B — <b>提交審查</b> → 表格下方出現 JILI.US 通知。</span></li>
+    <li><span class="lang-en">Rows 2 and 3 are pre-set to the locked states; the info icon opens the consent record.</span><span class="lang-zh">第 2、3 列預設為鎖定狀態；info 圖示可看同意紀錄。</span></li>
+    <li><span class="lang-en">The header language selector switches every new string.</span><span class="lang-zh">右上角語言選單可切換所有新增文案。</span></li>
+  </ol>
+  <div class="helper-foot">
+    <button class="btn btn-sm" id="do-reset" type="button" style="width:100%">
+      <span class="ms">restart_alt</span><span class="lang-en">Reset prototype</span><span class="lang-zh">重設原型</span>
+    </button>
+  </div>
+</aside>
+
+<script>
+(function(){
+  "use strict";
+
+  /* If Material Symbols never loads, hide the ligature spans rather than
+     showing raw words like "check_circle". */
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function(){
+      if (!document.fonts.check('16px "Material Symbols Outlined"')) {
+        document.documentElement.classList.add("no-icons");
+      }
+    });
+  }
+
+  var T = {
+    unsigned:{en:"Unsigned", zh:"未簽核"},
+    pending:{en:"Pending Review", zh:"待審核"},
+    approved:{en:"Approved", zh:"已核准"},
+    modify:{en:"Modify", zh:"修改"},
+    del:{en:"Delete", zh:"刪除"},
+    confirm:{en:"Confirm & Approve", zh:"同意生效"},
+    submit:{en:"Submit for Review", zh:"提交審查"},
+    lockedTip:{en:"Settings are locked at this status.", zh:"此狀態下設定已鎖定，不可操作。"},
+    recordTip:{en:"View approval record", zh:"查看簽核紀錄"},
+    selected:{en:"Selected: ", zh:"已選："},
+    fields:{
+      name:{en:"Event Name", zh:"活動名稱"},
+      site:{en:"Site", zh:"站台"},
+      game:{en:"Event Game", zh:"活動遊戲"},
+      rule:{en:"Event Rule", zh:"活動規則"},
+      start:{en:"Start Time", zh:"開始時間"},
+      end:{en:"End Time", zh:"結束時間"},
+      ranking:{en:"Total Ranking", zh:"名次數"},
+      cost:{en:"Total Cost", zh:"總獎金"},
+      operator:{en:"Operator", zh:"提交廠商 / 帳號"},
+      submitted:{en:"Submitted At", zh:"提交時間"},
+      account:{en:"Account", zh:"操作帳號"},
+      actedAt:{en:"Action Time", zh:"操作時間"},
+      consent:{en:"Consent Record", zh:"同意紀錄"},
+      result:{en:"Result", zh:"審核結果"}
+    },
+    consentSelf:{
+      en:"Leaderboard Event Confirmation — agreed (self-run event, auto-approved)",
+      zh:"排行榜活動確認 — 已同意（自行舉辦，系統自動審核）"
+    },
+    consentSubmit:{en:"Submitted to JILI.US for manual review", zh:"已提交 JILI.US 人工審核"},
+    resultAuto:{en:"Auto-approved by system", zh:"系統自動審核通過"},
+    resultJili:{en:"Approved by JILI.US reviewer", zh:"JILI.US 人工審核通過"},
+    resultWait:{en:"Waiting for JILI.US review", zh:"等待 JILI.US 審核"},
+    jiliDoneHead:{en:"Approved by JILI.US at ", zh:"已由 JILI.US 於 "},
+    jiliDoneTail:{en:" — the event goes live at its start time.", zh:" 審核通過，活動將依設定時間生效。"}
+  };
+
+  var lang = "en";
+  try { lang = sessionStorage.getItem("proto-lang") || "en"; } catch(e){}
+
+  var langSel = document.getElementById("lang");
+  langSel.value = lang;
+  langSel.addEventListener("change", function(){
+    lang = langSel.value;
+    try { sessionStorage.setItem("proto-lang", lang); } catch(e){}
+    applyLang();
+  });
+
+  function t(node){ return (node && node[lang]) ? node[lang] : ""; }
+
+  function applyLang(){
+    document.documentElement.setAttribute("data-lang", lang);
+    var swaps = document.querySelectorAll("[data-en]");
+    for (var i=0;i<swaps.length;i++){
+      swaps[i].textContent = swaps[i].getAttribute("data-" + lang) || swaps[i].getAttribute("data-en");
+    }
+    var rows = document.querySelectorAll("#grid tbody tr");
+    for (var j=0;j<rows.length;j++) render(rows[j]);
+    if (!jiliCard.hidden && jiliRow) {
+      var wasDone = jiliDone.style.display === "block";
+      fillJili(jiliRow);
+      if (wasDone) {
+        jiliDone.textContent = t(T.jiliDoneHead) + jiliDoneAt + t(T.jiliDoneTail);
+        jiliDone.style.display = "block";
+        document.getElementById("jili-approve").disabled = true;
+      }
+    }
+    count();
+  }
+
+  /* ---------------- row rendering ---------------- */
+  var PILL = {unsigned:"pill-hold", pending:"pill-wait", approved:"pill-ok"};
+  var ICON = {unsigned:"cancel", pending:"hourglass_top", approved:"check_circle"};
+
+  function render(tr){
+    var status = tr.getAttribute("data-status");
+    var statusCell = tr.querySelector(".status-cell");
+    var actions = tr.querySelector(".cell-actions");
+
+    statusCell.innerHTML = "";
+    var pill = document.createElement("span");
+    pill.className = "pill " + PILL[status];
+    pill.innerHTML = '<span class="ms">' + ICON[status] + '</span>';
+    pill.appendChild(document.createTextNode(t(T[status])));
+    statusCell.appendChild(pill);
+
+    if (tr.getAttribute("data-record-at")) {
+      var info = document.createElement("button");
+      info.type = "button";
+      info.className = "record-btn";
+      info.title = t(T.recordTip);
+      info.setAttribute("aria-label", t(T.recordTip));
+      info.innerHTML = '<span class="ms">info</span>';
+      info.addEventListener("click", function(){ showRecord(tr); });
+      statusCell.appendChild(info);
+    }
+
+    var locked = (status !== "unsigned");
+    actions.innerHTML = "";
+    actions.appendChild(mkBtn("btn-info", "edit", t(T.modify), locked));
+    if (!locked) {
+      actions.appendChild(mkBtn("btn-green", "verified", t(T.confirm), false, function(){ openFlow(tr, "confirm"); }));
+      actions.appendChild(mkBtn("btn-navy", "send", t(T.submit), false, function(){ openFlow(tr, "submit"); }));
+    }
+    actions.appendChild(mkBtn("btn-red", "delete", t(T.del), locked));
+  }
+
+  function mkBtn(cls, icon, label, disabled, onClick){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn btn-sm " + cls;
+    b.innerHTML = '<span class="ms">' + icon + '</span>';
+    b.appendChild(document.createTextNode(label));
+    if (disabled) { b.disabled = true; b.title = t(T.lockedTip); }
+    if (onClick) b.addEventListener("click", onClick);
+    return b;
+  }
+
+  /* ---------------- modal plumbing ---------------- */
+  var openDialog = null, lastFocus = null;
+
+  function open(id){
+    var bd = document.getElementById(id);
+    lastFocus = document.activeElement;
+    bd.hidden = false;
+    openDialog = bd;
+    var first = bd.querySelector(".dialog-foot .btn");
+    if (first) first.focus();
+  }
+  function close(){
+    if (!openDialog) return;
+    openDialog.hidden = true;
+    openDialog = null;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  document.addEventListener("click", function(e){
+    var el = e.target;
+    while (el && el.nodeType === 1) {
+      if (el.hasAttribute("data-close")) { close(); return; }
+      el = el.parentNode;
+    }
+    if (openDialog && e.target === openDialog) close();
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && openDialog) close();
+  });
+
+  var current = null;
+  var EVENT_KEYS = ["name","site","game","rule","start","end","ranking","cost"];
+
+  function openFlow(tr, kind){
+    current = tr;
+    open((kind === "confirm") ? "m-confirm" : "m-submit");
+  }
+
+  function stamp(){
+    var d = new Date(), p = function(n){ return (n<10?"0":"") + n; };
+    return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + " " +
+           p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+
+  /* ---- path A: agree and submit -> auto approved ---- */
+  document.getElementById("do-agree").addEventListener("click", function(){
+    var tr = current;
+    close();
+    tr.setAttribute("data-status", "approved");
+    tr.setAttribute("data-record-kind", "self");
+    tr.setAttribute("data-record-at", stamp());
+    render(tr);
+    open("m-approved");
+  });
+
+  /* ---- path B: submit for review -> pending review ---- */
+  document.getElementById("do-submit").addEventListener("click", function(){
+    var tr = current;
+    close();
+    tr.setAttribute("data-status", "pending");
+    tr.setAttribute("data-record-kind", "submit");
+    tr.setAttribute("data-record-at", stamp());
+    render(tr);
+    showJili(tr);
+    open("m-submitted");
+  });
+
+  /* ---------------- approval record ---------------- */
+  function showRecord(tr){
+    var kind = tr.getAttribute("data-record-kind");
+    var status = tr.getAttribute("data-status");
+    var dl = document.getElementById("record-fields");
+    dl.innerHTML = "";
+
+    var rows = [
+      [t(T.fields.name), tr.getAttribute("data-name")],
+      [t(T.fields.account), tr.getAttribute("data-operator")],
+      [t(T.fields.actedAt), tr.getAttribute("data-record-at")],
+      [t(T.fields.consent), kind === "self" ? t(T.consentSelf) : t(T.consentSubmit)],
+      [t(T.fields.result), status === "approved"
+          ? (kind === "self" ? t(T.resultAuto) : t(T.resultJili))
+          : t(T.resultWait)]
+    ];
+    for (var i=0;i<rows.length;i++){
+      var dt = document.createElement("dt"); dt.textContent = rows[i][0];
+      var dd = document.createElement("dd"); dd.textContent = rows[i][1];
+      dl.appendChild(dt); dl.appendChild(dd);
+    }
+    open("m-record");
+  }
+
+  /* ---------------- JILI.US notification card ---------------- */
+  var jiliCard = document.getElementById("jili-card");
+  var jiliFields = document.getElementById("jili-fields");
+  var jiliDone = document.getElementById("jili-done");
+  var jiliRow = null, jiliDoneAt = null;
+
+  function fillJili(tr){
+    jiliFields.innerHTML = "";
+    var keys = EVENT_KEYS.concat(["operator","submitted"]);
+    for (var i=0;i<keys.length;i++){
+      var key = keys[i];
+      var value = (key === "submitted") ? tr.getAttribute("data-record-at") : tr.getAttribute("data-" + key);
+      var dt = document.createElement("dt"); dt.textContent = t(T.fields[key]);
+      var dd = document.createElement("dd"); dd.textContent = value;
+      jiliFields.appendChild(dt); jiliFields.appendChild(dd);
+    }
+  }
+
+  function showJili(tr){
+    jiliRow = tr;
+    fillJili(tr);
+    jiliDone.style.display = "none";
+    document.getElementById("jili-approve").disabled = false;
+    jiliCard.hidden = false;
+  }
+
+  document.getElementById("jili-approve").addEventListener("click", function(){
+    if (!jiliRow) return;
+    jiliDoneAt = stamp();
+    jiliRow.setAttribute("data-status", "approved");
+    jiliRow.setAttribute("data-record-at", jiliDoneAt);
+    render(jiliRow);
+    this.disabled = true;
+    jiliDone.textContent = t(T.jiliDoneHead) + jiliDoneAt + t(T.jiliDoneTail);
+    jiliDone.style.display = "block";
+  });
+  document.getElementById("jili-detail").addEventListener("click", function(){
+    if (jiliRow) showRecord(jiliRow);
+  });
+
+  /* ---------------- table chrome ---------------- */
+  var picks = document.querySelectorAll(".pick");
+  var countEl = document.getElementById("sel-count");
+  function count(){
+    var n = 0;
+    for (var i=0;i<picks.length;i++) if (picks[i].checked) n++;
+    countEl.textContent = t(T.selected) + n;
+  }
+  for (var p=0;p<picks.length;p++) picks[p].addEventListener("change", count);
+
+  document.getElementById("sel-all").addEventListener("click", function(){
+    for (var i=0;i<picks.length;i++) picks[i].checked = true;
+    count();
+  });
+  document.getElementById("sel-ne").addEventListener("click", function(){
+    var rows = document.querySelectorAll("#grid tbody tr");
+    for (var i=0;i<rows.length;i++){
+      var exported = rows[i].querySelector(".pill-ok") !== null;
+      rows[i].querySelector(".pick").checked = !exported;
+    }
+    count();
+  });
+
+  document.getElementById("do-search").addEventListener("click", function(){
+    var want = document.getElementById("f-status").value;
+    var text = document.getElementById("f-name").value.trim().toLowerCase();
+    var rows = document.querySelectorAll("#grid tbody tr");
+    for (var i=0;i<rows.length;i++){
+      var okStatus = (want === "all") || (rows[i].getAttribute("data-status") === want);
+      var okText = !text || rows[i].getAttribute("data-name").toLowerCase().indexOf(text) > -1;
+      rows[i].style.display = (okStatus && okText) ? "" : "none";
+    }
+  });
+  document.getElementById("do-reset-filter").addEventListener("click", function(){
+    document.getElementById("f-status").value = "all";
+    document.getElementById("f-name").value = "";
+    var rows = document.querySelectorAll("#grid tbody tr");
+    for (var i=0;i<rows.length;i++) rows[i].style.display = "";
+  });
+
+  var folds = document.querySelectorAll(".fold");
+  for (var f=0;f<folds.length;f++){
+    folds[f].addEventListener("click", function(){
+      var box = this.parentNode.parentNode;
+      var body = box.querySelector(".table-scroll");
+      var bar = box.querySelector(".toolbar");
+      var hide = body.style.display !== "none";
+      body.style.display = hide ? "none" : "";
+      if (bar) bar.style.display = hide ? "none" : "";
+      this.querySelector(".ms").textContent = hide ? "expand_more" : "expand_less";
+    });
+  }
+
+  /* ---------------- prototype helper ---------------- */
+  var helper = document.getElementById("helper");
+  var helperOpen = document.getElementById("helper-open");
+  document.getElementById("helper-min").addEventListener("click", function(){
+    helper.style.display = "none";
+    helperOpen.style.display = "block";
+  });
+  helperOpen.addEventListener("click", function(){
+    helper.style.display = "";
+    helperOpen.style.display = "none";
+  });
+  document.getElementById("do-reset").addEventListener("click", function(){
+    location.reload();
+  });
+
+  /* ---------------- live clock ---------------- */
+  var clock = document.getElementById("clock");
+  function tick(){ clock.textContent = stamp(); }
+  tick(); setInterval(tick, 1000);
+
+  applyLang();
+})();
+</script>
