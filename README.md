@@ -1,4 +1,4 @@
-# Leaderboard Approval Flow — Prototype
+# Tournament Approval Flow — Prototype
 
 排行榜活動「廠商自主簽核」功能的可點擊原型。單一 HTML 檔，無後端、無建置流程，所有狀態變化都在瀏覽器端模擬。
 
