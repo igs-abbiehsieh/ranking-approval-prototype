@@ -38,7 +38,7 @@
 
 | 按鈕 | 功能 | 送出後 |
 |---|---|---|
-| Save Draft | 只儲存設定，不進行審核 | 狀態維持 Draft / Unsigned，可繼續修改 |
+| Save Draft | 只儲存設定，不進行審核 | 狀態維持 Draft（草稿），可繼續修改 |
 | Submit for Review | 申請與 JILI.US 共同舉辦、共同分擔獎池 | Pending Review，設定鎖定，JILI.US 收到通知 |
 | Agree & Approve | 營運商自行承擔獎池與責任 | 同意免責聲明後系統自動 Approved，設定鎖定 |
 
@@ -48,7 +48,7 @@
 
 | 送出方式 | 狀態 | Modify / Delete |
 |---|---|---|
-| 儲存草稿 | 尚未簽核 | 亮燈，按 Modify 回到設定頁繼續改 |
+| 儲存草稿 | 草稿 Draft | 亮燈，按 Modify 回到設定頁繼續改 |
 | 提交審查 | 等待審查 | 灰階 |
 | 同意簽核 | 已核准 | 灰階 |
 

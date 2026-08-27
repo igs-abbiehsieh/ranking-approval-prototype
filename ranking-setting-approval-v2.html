@@ -546,7 +546,7 @@
       <div class="filters">
         <div class="field">
           <label for="l-status">Approval Status</label>
-          <select class="ctrl" id="l-status"><option>All</option><option>Unsigned</option><option>Pending Review</option><option>Approved</option></select>
+          <select class="ctrl" id="l-status"><option>All</option><option>Draft</option><option>Pending Review</option><option>Approved</option></select>
         </div>
         <div class="field">
           <label for="l-group">Event Group</label>
@@ -776,7 +776,7 @@
   </h2>
   <ol>
     <li><span class="lang-en">Four buttons at the bottom: <b>Cancel · Save Draft · Submit for Review · Agree &amp; Approve</b>. Each one lands on the Activity Setting list.</span><span class="lang-zh">頁尾四顆按鈕：<b>取消 · 儲存草稿 · 提交審查 · 同意簽核</b>。送出後都會進到活動列表。</span></li>
-    <li><span class="lang-en"><b>Save Draft</b> → row shows <b>Unsigned</b>, Modify and Delete stay live. Modify goes back to this form.</span><span class="lang-zh"><b>儲存草稿</b> → 該列顯示 <b>尚未簽核</b>，Modify、Delete 維持亮燈；按 Modify 回到設定頁。</span></li>
+    <li><span class="lang-en"><b>Save Draft</b> → row shows <b>Draft</b>, Modify and Delete stay live. Modify goes back to this form.</span><span class="lang-zh"><b>儲存草稿</b> → 該列顯示 <b>草稿</b>，Modify、Delete 維持亮燈；按 Modify 回到設定頁。</span></li>
     <li><span class="lang-en"><b>Submit for Review</b> → row shows <b>Pending Review</b>, Modify and Delete grey out.</span><span class="lang-zh"><b>提交審查</b> → 該列顯示 <b>等待審查</b>，Modify、Delete 灰階。</span></li>
     <li><span class="lang-en"><b>Agree &amp; Approve</b> → disclaimer → row goes straight to <b>Approved</b>, buttons grey out.</span><span class="lang-zh"><b>同意簽核</b> → 免責聲明 → 該列直接是 <b>已核准</b>，按鈕灰階。</span></li>
     <li><span class="lang-en">Time Zone in both dialogs follows the <b>GMT selector</b> in the header — change it and reopen to see it move.</span><span class="lang-zh">彈窗的 Time Zone 跟著右上角 <b>GMT 選單</b>走，改了再開就會變。</span></li>
@@ -806,7 +806,7 @@
   var T = {
     /* the three states shown on the Activity Setting row */
     st:{
-      unsigned:{en:"Unsigned", zh:"尚未簽核"},
+      draft:{en:"Draft", zh:"草稿"},
       pending:{en:"Pending Review", zh:"等待審查"},
       approved:{en:"Approved", zh:"已核准"}
     },
@@ -1111,12 +1111,12 @@
   }
 
   /* ---------------- status + locking ---------------- */
-  var status = "unsigned", locked = false, record = null, savedAt = null;
+  var status = "draft", locked = false, record = null, savedAt = null;
   var statusSlot = document.getElementById("status-slot");
   var savedNote  = document.getElementById("saved-note");
   var actionbar  = document.getElementById("actionbar");
-  var PILL = {unsigned:"pill-hold", pending:"pill-wait", approved:"pill-ok"};
-  var ICON = {unsigned:"cancel", pending:"hourglass_top", approved:"check_circle"};
+  var PILL = {draft:"pill-hold", pending:"pill-wait", approved:"pill-ok"};
+  var ICON = {draft:"edit_note", pending:"hourglass_top", approved:"check_circle"};
 
   function statusPill(st){
     var pill = document.createElement("span");
@@ -1141,7 +1141,7 @@
       statusSlot.appendChild(info);
     }
 
-    savedNote.textContent = (status === "unsigned" && savedAt) ? (t(T.savedAt) + savedAt) : "";
+    savedNote.textContent = (status === "draft" && savedAt) ? (t(T.savedAt) + savedAt) : "";
 
     var lockNote = document.getElementById("lock-note");
     if (locked) {
@@ -1301,8 +1301,8 @@
     cell(tr, d.winners, "num");
     cell(tr, d.cost, "num");
 
-    /* Unsigned keeps Modify + Delete live; both locked states grey them out */
-    var live = (st === "unsigned");
+    /* Draft keeps Modify + Delete live; both locked states grey them out */
+    var live = (st === "draft");
     var acts = document.createElement("td");
     acts.className = "cell-actions";
     acts.appendChild(rowBtn("btn-info", "edit", t(T.modify), !live, goSetting));
@@ -1323,11 +1323,11 @@
     location.reload();
   });
 
-  /* ---- A. Save Draft — status stays Unsigned, nothing locks ---- */
+  /* ---- A. Save Draft — status stays Draft, nothing locks ---- */
   document.getElementById("btn-draft").addEventListener("click", function(){
     savedAt = stamp();
-    status = "unsigned";
-    listRow = {status:"unsigned", data:eventData()};
+    status = "draft";
+    listRow = {status:"draft", data:eventData()};
     renderStatus();
     open("m-draft");
   });
