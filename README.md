@@ -2,7 +2,7 @@
 
 排行榜活動「廠商自主簽核」功能的可點擊原型。單一 HTML 檔，無後端、無建置流程，所有狀態變化都在瀏覽器端模擬。
 
-**開啟原型：** https://aabbsmile01.github.io/ranking-approval-prototype/
+**開啟原型：** https://igs-abbiehsieh.github.io/ranking-approval-prototype/
 
 ## 這個原型演示什麼
 
