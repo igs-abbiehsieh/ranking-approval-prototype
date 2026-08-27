@@ -1,0 +1,1258 @@
+<title>Draft, Review, Approve</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=swap">
+<style>
+  /* ---------------------------------------------------------------
+     Ranking Setting approval prototype (spec V2) — mirrors the
+     SSS_Operation backend (AdminLTE "skin-red"), same visual system
+     as the activity-list prototype. Single visual world on purpose:
+     every colour is painted explicitly, no theme swap offered.
+  ----------------------------------------------------------------*/
+  :root{
+    --red:#dd4b39; --red-dark:#d73925;
+    --nav:#222d32; --nav-hover:#1e282c; --nav-sub:#2c3b41;
+    --nav-text:#b8c7ce; --nav-sub-text:#8aa4af;
+    --ground:#ecf0f5; --surface:#fff;
+    --line:#f4f4f4; --line-strong:#ddd;
+    --ink:#333; --ink-soft:#555; --muted:#999;
+    --accent:#3c8dbc;
+    --green:#00a65a; --green-dark:#008d4c;
+    --info:#00acd6; --info-dark:#0097bc;
+    --warn:#f39c12;
+    --ok-bg:#dff0d8; --ok-ink:#3c763d; --ok-line:#c5e0b4;
+    --wait-bg:#d9edf7; --wait-ink:#31708f; --wait-line:#bce8f1;
+    --hold-bg:#fcf8e3; --hold-ink:#8a6d3b; --hold-line:#faebcc;
+    --shadow:0 1px 1px rgba(0,0,0,.1);
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"Source Sans 3","Source Sans Pro","Segoe UI",Tahoma,sans-serif;
+    font-size:14px; line-height:1.42857; -webkit-font-smoothing:antialiased;
+  }
+  .ms{
+    font-family:"Material Symbols Outlined";
+    font-weight:400; font-style:normal; font-size:17px; line-height:1;
+    letter-spacing:normal; text-transform:none; white-space:nowrap;
+    word-wrap:normal; direction:ltr; vertical-align:-3px;
+    -webkit-font-feature-settings:'liga'; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;
+  }
+  .no-icons .ms{display:none}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+
+  /* ---------- shell ---------- */
+  .shell{display:grid; grid-template-columns:230px 1fr; grid-template-rows:50px auto; min-height:100vh}
+  .logo{grid-area:1/1; background:var(--red-dark); color:#fff; display:flex; align-items:center;
+        padding:0 15px; font-size:20px; font-weight:700}
+  .navbar{grid-area:1/2; background:var(--red); color:#fff; display:flex; align-items:center; gap:6px; padding:0 12px 0 0}
+  .navbar .burger{background:none; border:0; color:#fff; padding:15px; cursor:pointer; line-height:1}
+  .navbar .burger:hover{background:var(--red-dark)}
+  .nav-right{margin-left:auto; display:flex; align-items:center; gap:2px; flex-wrap:wrap}
+  .nav-link{display:inline-flex; align-items:center; gap:6px; color:#fff; text-decoration:none;
+            padding:15px 12px; background:none; border:0; cursor:pointer; font-family:inherit; font-size:14px}
+  .nav-link:hover{background:var(--red-dark)}
+  .nav-clock{display:inline-flex; align-items:center; gap:6px; padding:15px 12px; font-variant-numeric:tabular-nums}
+  .nav-select{font-family:inherit; font-size:13px; padding:4px 6px; border:1px solid rgba(0,0,0,.15);
+              border-radius:3px; background:#fff; color:var(--ink); margin:0 3px}
+
+  /* ---------- sidebar ---------- */
+  .sidebar{grid-area:2/1; background:var(--nav); padding-bottom:40px}
+  .who{color:#fff; text-align:center; padding:14px 10px; font-weight:600}
+  .side-search{display:flex; margin:0 12px 12px}
+  .side-search input{flex:1; min-width:0; background:#374850; border:1px solid #374850; color:#fff;
+                     padding:7px 10px; font-family:inherit; font-size:13px; border-radius:2px 0 0 2px}
+  .side-search input::placeholder{color:#8aa4af}
+  .side-search button{background:#374850; border:1px solid #374850; border-left:0; color:#8aa4af;
+                      padding:0 10px; cursor:pointer; border-radius:0 2px 2px 0}
+  .side-head{color:#4b646f; font-size:12px; padding:10px 15px; background:#1a2226}
+  .side-list{list-style:none; margin:0; padding:0}
+  .side-list a{display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none;
+               padding:12px 12px 12px 15px; border-left:3px solid transparent; font-size:14px}
+  .side-list a:hover{color:#fff; background:var(--nav-hover)}
+  .side-list a .chev{margin-left:auto; font-size:14px; opacity:.7}
+  .side-list li.open > a{color:#fff; background:var(--nav-hover); border-left-color:var(--red)}
+  .sub{list-style:none; margin:0; padding:8px 0; background:var(--nav-sub)}
+  .sub a{color:var(--nav-sub-text); padding:8px 12px 8px 30px; border-left:0}
+  .sub a:hover{color:#fff; background:transparent}
+  .sub li.active a{color:#fff}
+
+  /* ---------- content ---------- */
+  .content{grid-area:2/2; padding:15px 15px 40px; min-width:0}
+  .page-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:2px 0 18px}
+  h1.page{font-size:24px; font-weight:300; margin:0}
+  .saved-note{color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums}
+  .box{background:var(--surface); box-shadow:var(--shadow); margin-bottom:18px; border-top:3px solid var(--accent)}
+  .box.warn-top{border-top-color:var(--warn)}
+  .box-title{padding:12px 15px; font-size:16px; font-weight:600; display:flex; align-items:center; gap:9px}
+  .box-title .grow{margin-left:auto}
+  .box-body{padding:4px 0 14px}
+
+  /* ---------- horizontal form ---------- */
+  .frow{display:grid; grid-template-columns:210px minmax(0,1fr); gap:6px 18px; align-items:start; padding:11px 20px 11px 0}
+  .frow > .flabel{text-align:right; font-weight:700; padding-top:8px}
+  .req{color:var(--red)}
+  .help{color:var(--muted); font-size:12.5px; margin:6px 0 0}
+  .help .ms{font-size:14px; vertical-align:-2px}
+  .ctrl{font-family:inherit; font-size:14px; color:var(--ink-soft); background:#fff;
+        border:1px solid var(--line-strong); border-radius:3px; padding:7px 10px; width:100%}
+  .ctrl:disabled{background:#eee; color:#888; cursor:not-allowed}
+  select.ctrl{appearance:none; background-image:linear-gradient(45deg,transparent 50%,#888 50%),linear-gradient(135deg,#888 50%,transparent 50%);
+              background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%; background-size:5px 5px,5px 5px; background-repeat:no-repeat}
+  .with-icon{display:flex; align-items:stretch}
+  .with-icon .icon-box{display:flex; align-items:center; padding:0 11px; border:1px solid var(--line-strong);
+                       border-right:0; border-radius:3px 0 0 3px; background:#fff; color:var(--muted)}
+  .with-icon .ctrl{border-radius:0 3px 3px 0}
+  .cbline{display:flex; align-items:center; gap:8px; padding-top:8px}
+  .cbline input{margin:0}
+
+  /* ---------- game picker ---------- */
+  .picker{display:grid; grid-template-columns:1fr 1fr; border:1px solid #e3e3e3; border-radius:3px; overflow:hidden}
+  .picker-side{padding:12px; min-width:0}
+  .picker-side + .picker-side{border-left:1px solid #e3e3e3; background:#fbfcfd}
+  .picker-search{display:flex; align-items:stretch; margin-bottom:10px}
+  .tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
+  .tab{font-family:inherit; font-size:12px; padding:4px 12px; border-radius:20px; border:1px solid var(--line-strong);
+       background:#fff; color:#555; cursor:pointer; display:inline-flex; gap:6px; align-items:baseline}
+  .tab .n{color:var(--muted); font-size:11px}
+  .tab[aria-pressed="true"]{background:var(--red); border-color:var(--red-dark); color:#fff}
+  .tab[aria-pressed="true"] .n{color:rgba(255,255,255,.75)}
+  .picker-bar{display:flex; align-items:baseline; gap:8px; font-size:11px; letter-spacing:.06em;
+              text-transform:uppercase; color:var(--muted); padding-bottom:6px}
+  .picker-bar .act{margin-left:auto; background:none; border:0; padding:0; cursor:pointer;
+                   font-family:inherit; font-size:12px; letter-spacing:0; text-transform:none; color:var(--red)}
+  .picker-bar .act.add{color:var(--green)}
+  .picker-bar b{color:var(--red); font-size:12px}
+  .glist{max-height:290px; overflow-y:auto; border-top:1px solid #f0f0f0}
+  .grow{display:flex; align-items:center; gap:9px; padding:9px 4px; border-bottom:1px solid #f4f4f4; font-size:13.5px}
+  .grow label{display:flex; align-items:center; gap:9px; min-width:0; cursor:pointer; flex:1}
+  .grow input{margin:0; flex:none}
+  .gname{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .gtag{margin-left:auto; flex:none; font-size:11px; background:#eef6fb; color:#3c8dbc; border-radius:3px; padding:2px 8px}
+  .gtag.fish{background:#eaf7f0; color:#2e8b57}
+  .gid{color:var(--muted); font-variant-numeric:tabular-nums; flex:none}
+  .grow .drop{background:none; border:0; color:var(--muted); cursor:pointer; padding:0 2px; line-height:1}
+  .grow .drop:hover{color:var(--red)}
+  .empty-pick{padding:26px 6px; color:var(--muted); font-size:13px; text-align:center}
+
+  /* ---------- prize table ---------- */
+  .prize-wrap{overflow-x:auto; padding:0 15px}
+  table.prize{width:100%; border-collapse:collapse; min-width:860px}
+  table.prize th{text-align:left; font-weight:700; font-size:13.5px; padding:10px 8px; border-bottom:2px solid var(--line-strong)}
+  table.prize td{padding:8px; border-bottom:1px solid var(--line); vertical-align:middle}
+  table.prize td.num{font-variant-numeric:tabular-nums}
+  table.prize tfoot td{background:#eaf4fb; font-weight:700; border-bottom:0; padding:11px 8px}
+  .rowacts{display:flex; gap:5px}
+  .iconbtn{background:var(--info); border:1px solid var(--info-dark); color:#fff; border-radius:3px;
+           padding:4px 7px; cursor:pointer; line-height:1}
+  .iconbtn.del{background:var(--red); border-color:var(--red-dark)}
+  .iconbtn:disabled{opacity:.5; cursor:not-allowed}
+
+  /* ---------- banner placeholder ---------- */
+  .banner{width:246px; height:70px; border-radius:3px; border:1px solid #e3e3e3; display:grid; place-items:center;
+          background:linear-gradient(135deg,#3a2a12,#7c4a12 55%,#a9701f); color:#f3dfae; font-size:12px; letter-spacing:.04em}
+  .filepick{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .filepick .fake{background:#f4f4f4; border:1px solid var(--line-strong); border-radius:3px; padding:6px 12px;
+                  display:inline-flex; align-items:center; gap:7px; cursor:pointer}
+
+  /* ---------- buttons ---------- */
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; font-family:inherit;
+       font-size:14px; line-height:1.42857; padding:6px 12px; border-radius:3px;
+       border:1px solid var(--line-strong); cursor:pointer; background:#f4f4f4; color:#444; white-space:nowrap}
+  .btn:hover{background:#e7e7e7}
+  .btn-green{background:var(--green); border-color:var(--green-dark); color:#fff}
+  .btn-green:hover{background:var(--green-dark)}
+  .btn-info{background:var(--info); border-color:var(--info-dark); color:#fff}
+  .btn-info:hover{background:var(--info-dark)}
+  .btn-navy{background:#3c5a75; border-color:#2f4a62; color:#fff}
+  .btn-navy:hover{background:#2f4a62}
+  .btn-red{background:var(--red); border-color:var(--red-dark); color:#fff}
+  .btn-red:hover{background:var(--red-dark)}
+  .btn-sm{font-size:12px; padding:5px 10px}
+  .btn[disabled]{opacity:.5; cursor:not-allowed; background:#f4f4f4; color:#777; border-color:var(--line-strong)}
+  .btn[disabled]:hover{background:#f4f4f4}
+
+  /* ---------- footer action bar ---------- */
+  .actionbar{background:var(--surface); box-shadow:var(--shadow); padding:14px 15px;
+             display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+  .actionbar .lock-note{margin-right:auto; color:var(--muted); font-size:12.5px; display:none}
+  .actionbar.locked .lock-note{display:block}
+
+  /* ---------- status pill ---------- */
+  .pill{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:3px;
+        font-size:12px; font-weight:600; border:1px solid transparent; white-space:nowrap}
+  .pill .ms{font-size:14px; vertical-align:-2px}
+  .pill-hold{background:var(--hold-bg); color:var(--hold-ink); border-color:var(--hold-line)}
+  .pill-wait{background:var(--wait-bg); color:var(--wait-ink); border-color:var(--wait-line)}
+  .pill-ok{background:var(--ok-bg); color:var(--ok-ink); border-color:var(--ok-line)}
+  .record-btn{background:none; border:0; padding:0; cursor:pointer; color:var(--accent); line-height:1}
+  .record-btn .ms{font-size:17px}
+
+  /* ---------- JILI.US notification ---------- */
+  .notice-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px 20px; padding:6px 15px 14px; margin:0}
+  .notice-grid dt{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .notice-grid dd{margin:3px 0 0; font-weight:600; overflow-wrap:anywhere}
+  .notice-foot{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:0 15px 15px}
+  .notice-foot .tag{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#b57206;
+                    border:1px dashed var(--warn); border-radius:3px; padding:3px 7px}
+  .notice-done{padding:0 15px 15px; color:var(--ok-ink); font-weight:600; display:none}
+
+  /* ---------- modals ---------- */
+  .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:900; display:flex;
+            align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto}
+  .backdrop[hidden]{display:none}
+  .dialog{background:#fff; width:100%; max-width:620px; border-radius:4px; color:var(--ink);
+          box-shadow:0 5px 15px rgba(0,0,0,.5); animation:rise .18s ease-out}
+  .dialog.narrow{max-width:450px}
+  @keyframes rise{from{transform:translateY(-18px); opacity:0} to{transform:none; opacity:1}}
+  @media (prefers-reduced-motion:reduce){.dialog{animation:none}}
+  .dialog-head{display:flex; align-items:center; gap:9px; padding:14px 16px; border-bottom:1px solid #e5e5e5;
+               font-size:17px; font-weight:600}
+  .dialog-head .ms{font-size:20px}
+  .dialog-head .x{margin-left:auto; background:none; border:0; font-size:20px; color:#999; cursor:pointer; line-height:1}
+  .dialog-head.tone-ok{color:var(--ok-ink)} .dialog-head.tone-ok .ms{color:var(--green)}
+  .dialog-head.tone-wait{color:var(--wait-ink)} .dialog-head.tone-wait .ms{color:var(--accent)}
+  .dialog-head.tone-warn .ms{color:var(--warn)}
+  .dialog-body{padding:16px}
+  .dialog-copy{max-width:62ch}
+  .dialog-body p{margin:0 0 11px}
+  .dialog-body p:last-child{margin-bottom:0}
+  .lead{font-weight:700; margin:0 0 10px}
+  .settings{margin:0 0 14px; display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 10px; font-size:14px}
+  .settings dt{color:var(--ink-soft)}
+  .settings dd{margin:0; font-weight:600; overflow-wrap:anywhere}
+  .settings .tz-row{font-weight:700}
+  .settings dd.tz{color:#b03a2c}
+  .rule{border:0; border-top:1px solid #e5e5e5; margin:0 0 14px}
+  .dialog-body strong{color:#b03a2c}
+  .dialog-foot{display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid #e5e5e5}
+  .record-list{margin:0; display:grid; gap:9px}
+  .record-list dt{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .record-list dd{margin:2px 0 0; font-weight:600; overflow-wrap:anywhere}
+
+  /* ---------- prototype helper ---------- */
+  .helper{position:fixed; right:16px; bottom:16px; z-index:800; width:300px; background:#1f2933; color:#d7e0e6;
+          border-radius:5px; box-shadow:0 6px 22px rgba(0,0,0,.35); font-size:12.5px}
+  .helper h2{font-size:12px; letter-spacing:.08em; text-transform:uppercase; margin:0; padding:10px 12px;
+             border-bottom:1px solid #2f3b45; color:#8fb8d2; display:flex; align-items:center; gap:7px}
+  .helper h2 button{margin-left:auto; background:none; border:0; color:#7f8f9a; cursor:pointer; line-height:1; font-size:16px}
+  .helper ol{margin:0; padding:11px 12px 11px 28px; display:grid; gap:6px}
+  .helper b{color:#fff}
+  .helper-foot{padding:0 12px 12px}
+  .helper-open{position:fixed; right:16px; bottom:16px; z-index:800; display:none; background:#1f2933; color:#d7e0e6;
+               border:0; border-radius:20px; padding:9px 15px; font-family:inherit; font-size:12.5px; cursor:pointer;
+               box-shadow:0 6px 22px rgba(0,0,0,.35)}
+
+  .lang-zh{display:none}
+  html[data-lang="zh"] .lang-zh{display:block}
+  html[data-lang="zh"] .lang-en{display:none}
+  html[data-lang="zh"] span.lang-zh{display:inline}
+  html[data-lang="zh"] li .lang-zh{display:list-item}
+
+  @media (max-width:1100px){
+    .picker{grid-template-columns:1fr}
+    .picker-side + .picker-side{border-left:0; border-top:1px solid #e3e3e3}
+  }
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr}
+    .logo{display:none}
+    .navbar{grid-area:1/1}
+    .sidebar{display:none}
+    .content{grid-area:2/1}
+    .frow{grid-template-columns:1fr; padding:11px 15px}
+    .frow > .flabel{text-align:left; padding-top:0}
+    .helper{left:16px; right:16px; width:auto}
+  }
+</style>
+
+<div class="shell">
+  <div class="logo">Management</div>
+
+  <div class="navbar">
+    <button class="burger" type="button" aria-label="Toggle menu"><span class="ms">menu</span></button>
+    <div class="nav-right">
+      <a class="nav-link" href="#"><span class="ms">home</span>Home</a>
+      <a class="nav-link" href="#"><span class="ms">key</span>Change Password</a>
+      <span class="nav-clock"><span class="ms">schedule</span><span id="clock">2026-08-27 13:58:48</span></span>
+      <select class="nav-select" id="tz" aria-label="Time zone">
+        <option value="GMT+8" selected>GMT+8</option>
+        <option value="GMT+0">GMT+0</option>
+        <option value="GMT-4">GMT-4</option>
+        <option value="GMT-5">GMT-5</option>
+      </select>
+      <select class="nav-select" id="lang" aria-label="Language">
+        <option value="en">English</option>
+        <option value="zh">繁體中文</option>
+      </select>
+      <a class="nav-link" href="#"><span class="ms">logout</span>Logout</a>
+    </div>
+  </div>
+
+  <nav class="sidebar">
+    <div class="who">SSS_Operation</div>
+    <div class="side-search">
+      <input type="search" placeholder="Search..." aria-label="Search menu">
+      <button type="button" aria-label="Search"><span class="ms">search</span></button>
+    </div>
+    <div class="side-head">Main Menu</div>
+    <ul class="side-list">
+      <li><a href="#"><span class="ms">admin_panel_settings</span>Admin Account<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">groups</span>Player Account<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">bar_chart</span>Report<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">campaign</span>Game Cross Promotion<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">build</span>Maintenance<span class="ms chev">chevron_right</span></a></li>
+      <li class="open">
+        <a href="#"><span class="ms">leaderboard</span>Ranking Service<span class="ms chev">expand_more</span></a>
+        <ul class="sub">
+          <li><a href="#"><span class="ms">hub</span>Event List</a></li>
+          <li><a href="#"><span class="ms">settings</span>Event Setting</a></li>
+          <li><a href="#"><span class="ms">edit_note</span>Ranking Approval</a></li>
+          <li class="active"><a href="#"><span class="ms">radio_button_checked</span>SSS Ranking Setting</a></li>
+          <li><a href="#"><span class="ms">flag</span>SSS Ranking List</a></li>
+          <li><a href="#"><span class="ms">group</span>Agent Group Management</a></li>
+          <li><a href="#"><span class="ms">block</span>Ranking Blacklist Setting</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="ms">dns</span>Platform Service<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">notifications</span>Smart Notice<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">savings</span>JP Tool_unregulated<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">redeem</span>GiftCode Tool<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">casino</span>FreeSpin Tool<span class="ms chev">chevron_right</span></a></li>
+      <li><a href="#"><span class="ms">tune</span>Game Bet Setting<span class="ms chev">chevron_right</span></a></li>
+    </ul>
+  </nav>
+
+  <main class="content">
+    <div class="page-head">
+      <h1 class="page">Simple Ranking Setting</h1>
+      <span id="status-slot"></span>
+      <span class="saved-note" id="saved-note"></span>
+    </div>
+
+    <!-- ===== Basic Information ===== -->
+    <section class="box">
+      <div class="box-title">Basic Information</div>
+      <div class="box-body">
+        <div class="frow">
+          <div class="flabel">ApiId <span class="req">*</span></div>
+          <div><select class="ctrl form-field"><option>20002_SSS_Single</option><option>20003_SSS_Multi</option></select></div>
+        </div>
+        <div class="frow">
+          <div class="flabel">AgentId <span class="req">*</span></div>
+          <div><select class="ctrl form-field" id="agent-id">
+            <option>Aloha_SC@api-20002.game</option>
+            <option>Fortune_SC@api-20002.game</option>
+          </select></div>
+        </div>
+        <div class="frow">
+          <div class="flabel">Event Type <span class="req">*</span></div>
+          <div><select class="ctrl form-field" id="event-type">
+            <option>Accumulated Winning</option>
+            <option>Total Bet</option>
+            <option>Total Win</option>
+            <option>Biggest Single Win</option>
+          </select></div>
+        </div>
+        <div class="frow">
+          <div class="flabel">Event Time <span class="req">*</span></div>
+          <div>
+            <div class="with-icon">
+              <span class="icon-box"><span class="ms">calendar_month</span></span>
+              <input class="ctrl form-field" id="event-time" type="text" value="2026-08-27 14:10 - 2026-08-27 14:20">
+            </div>
+            <p class="help">Please set the event for more than 10 minutes later to allow for processing time.</p>
+          </div>
+        </div>
+        <div class="frow">
+          <div class="flabel">Display Time</div>
+          <div>
+            <label class="cbline"><input type="checkbox" class="form-field"> Enable displaying info pop-up (optional)</label>
+            <p class="help">If enabled, the event info pop-up will appear based on your display time settings during the tournament.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Tournament Settings ===== -->
+    <section class="box">
+      <div class="box-title">Tournament Settings</div>
+      <div class="box-body">
+        <div class="frow">
+          <div class="flabel">Event Name <span class="req">*</span></div>
+          <div>
+            <input class="ctrl form-field" id="event-name" type="text" value="SSS_Test_0827_2" maxlength="30">
+            <p class="help">Max 30 characters, no special characters or spaces.</p>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="flabel">Event Games <span class="req">*</span></div>
+          <div>
+            <div class="picker">
+              <div class="picker-side">
+                <div class="picker-search with-icon">
+                  <span class="icon-box"><span class="ms">search</span></span>
+                  <input class="ctrl form-field" id="game-search" type="search" placeholder="Search game name or ID...">
+                </div>
+                <div class="tabs" role="group" aria-label="Game type filter">
+                  <button class="tab form-field" type="button" data-kind="all" aria-pressed="true">All <span class="n" id="n-all">0</span></button>
+                  <button class="tab form-field" type="button" data-kind="Slot" aria-pressed="false">Slot <span class="n" id="n-slot">0</span></button>
+                  <button class="tab form-field" type="button" data-kind="Fish" aria-pressed="false">Fish <span class="n" id="n-fish">0</span></button>
+                </div>
+                <div class="picker-bar">
+                  <span>Available · <b id="n-available">0</b></span>
+                  <button class="act add form-field" type="button" id="add-all">+ Add All</button>
+                </div>
+                <div class="glist" id="available"></div>
+              </div>
+              <div class="picker-side">
+                <div class="picker-bar">
+                  <span>Selected · <b id="n-selected">0</b></span>
+                  <button class="act form-field" type="button" id="clear-all">Clear All</button>
+                </div>
+                <div class="glist" id="selected"></div>
+              </div>
+            </div>
+            <p class="help">Up to 20 games can be included.</p>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="flabel">Minimum Bet Requirement <span class="req">*</span></div>
+          <div><input class="ctrl form-field" type="text" value="0.01"></div>
+        </div>
+        <div class="frow">
+          <div class="flabel">Icon Floating</div>
+          <div>
+            <label class="cbline"><input type="checkbox" class="form-field"> Enable Floating Icon (optional)</label>
+            <p class="help">Enable to show the ranking icon on the game screen. If disabled, it will be shown in the side menu only.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Prize Settings ===== -->
+    <section class="box">
+      <div class="box-title">
+        Prize Settings
+        <span class="grow"></span>
+        <button class="btn btn-sm form-field" id="add-row" type="button"><span class="ms">add</span>Add Row</button>
+      </div>
+      <div class="box-body">
+        <div class="prize-wrap">
+          <table class="prize">
+            <thead>
+              <tr>
+                <th style="width:17%">From Rank</th>
+                <th style="width:17%">To Rank</th>
+                <th style="width:16%">Reward Currency</th>
+                <th style="width:18%">Reward Amount</th>
+                <th style="width:12%">Winner Count</th>
+                <th style="width:10%">Value</th>
+                <th style="width:10%">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="prize-body"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" style="text-align:right">Total Winners</td>
+                <td class="num" id="total-winners">0</td>
+                <td style="text-align:right">Total Cost</td>
+                <td class="num" id="total-cost">$0.00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Ranking Report Email Setting ===== -->
+    <section class="box warn-top">
+      <div class="box-title"><span class="ms">mail</span>Ranking Report Email Setting</div>
+      <div class="box-body">
+        <p class="help" style="padding:0 15px"><span class="ms">info</span> No email settings found. Please fill in recipients below; they will be saved automatically when you submit the form.</p>
+        <div class="frow">
+          <div class="flabel">Recipient Email <span class="req">*</span></div>
+          <div>
+            <input class="ctrl form-field" type="text" value="abbiehsieh@igs.com.tw">
+            <p class="help"><span class="ms">info</span> Enter multiple addresses separated by commas. System updates will be applied to new recipients (Agent ID) after confirming settings.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Promotional Page ===== -->
+    <section class="box">
+      <div class="box-title">Promotional Page</div>
+      <div class="box-body">
+        <div class="frow">
+          <div class="flabel">Upload Image</div>
+          <div>
+            <div class="filepick">
+              <span class="fake"><span class="ms">folder_open</span>Choose File</span>
+              <span class="help" style="margin:0">No file chosen</span>
+            </div>
+            <p class="help">Requirements: &lt;400KB, JPG/PNG format</p>
+            <p class="help"><span class="ms">image</span> Default banner preview (Sync API GET, id=-1):</p>
+            <div class="banner">banner placeholder</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== action bar: Cancel | Save Draft | Submit for Review | Agree & Approve ===== -->
+    <div class="actionbar" id="actionbar">
+      <span class="lock-note" id="lock-note"></span>
+      <button class="btn" id="btn-cancel" type="button" data-en="Cancel" data-zh="取消">Cancel</button>
+      <button class="btn btn-info" id="btn-draft" type="button">
+        <span class="ms">save</span><span class="lang-en">Save Draft</span><span class="lang-zh">儲存草稿</span>
+      </button>
+      <button class="btn btn-navy" id="btn-submit" type="button">
+        <span class="ms">send</span><span class="lang-en">Submit for Review</span><span class="lang-zh">提交審查</span>
+      </button>
+      <button class="btn btn-green" id="btn-agree" type="button">
+        <span class="ms">verified</span><span class="lang-en">Agree &amp; Approve</span><span class="lang-zh">同意簽核</span>
+      </button>
+    </div>
+
+    <!-- ===== JILI.US review notification (spec V2 section 15) ===== -->
+    <section class="box warn-top" id="jili-card" hidden style="margin-top:18px">
+      <div class="box-title">
+        <span class="ms" style="color:var(--warn)">mark_email_unread</span>
+        <span class="lang-en">JILI.US Review Notification</span>
+        <span class="lang-zh">JILI.US 審查通知</span>
+      </div>
+      <dl class="notice-grid" id="jili-fields"></dl>
+      <div class="notice-foot">
+        <span class="tag lang-en">Simulated JILI.US side</span>
+        <span class="tag lang-zh">模擬 JILI.US 端</span>
+        <button class="btn btn-navy btn-sm" id="jili-detail" type="button">
+          <span class="ms">open_in_new</span><span class="lang-en">Review / Detail</span><span class="lang-zh">審核 / 明細</span>
+        </button>
+        <button class="btn btn-green btn-sm" id="jili-approve" type="button">
+          <span class="ms">check_circle</span><span class="lang-en">Approve as JILI.US</span><span class="lang-zh">以 JILI.US 身分核准</span>
+        </button>
+      </div>
+      <div class="notice-done" id="jili-done"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ Save Draft success ============ -->
+<div class="backdrop" id="m-draft" hidden>
+  <div class="dialog narrow" role="dialog" aria-modal="true" aria-labelledby="m-draft-title">
+    <div class="dialog-head tone-wait" id="m-draft-title">
+      <span class="ms">save</span>
+      <span class="lang-en">Draft Saved</span>
+      <span class="lang-zh">草稿已儲存</span>
+    </div>
+    <div class="dialog-body dialog-copy">
+      <p class="lang-en">The tournament event has been saved successfully. You may continue editing it before approval.</p>
+      <p class="lang-zh">排行榜活動設定已成功儲存，您可於簽核前繼續修改。</p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-info" type="button" data-close data-en="OK" data-zh="確定">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Submit for Review ============ -->
+<div class="backdrop" id="m-submit" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="m-submit-title">
+    <div class="dialog-head tone-wait" id="m-submit-title">
+      <span class="ms">forward_to_inbox</span>
+      <span class="lang-en">Submit for JILI.US Review</span>
+      <span class="lang-zh">提交 JILI.US 審查</span>
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <p class="lead lang-en">Please confirm the tournament event settings below:</p>
+      <p class="lead lang-zh">請確認本次排行榜活動設定：</p>
+      <dl class="settings" data-settings></dl>
+      <hr class="rule">
+      <div class="dialog-copy">
+        <div class="lang-en">
+          <p>If you would like to <strong>co-host this event with JILI.US and share the prize pool</strong>, please submit the event for review.</p>
+          <p><strong>The event must be approved by JILI.US before it can take effect.</strong></p>
+          <p>Please allow <strong>1–3 business days</strong> for the review process. For urgent requests, please contact your Account Manager (AM).</p>
+        </div>
+        <div class="lang-zh">
+          <p>如希望由 <strong>JILI.US 與貴公司共同舉辦本次活動並共同分擔獎池</strong>，請提交本活動進行審查。</p>
+          <p>本活動須經 <strong>JILI.US 審核通過後方可生效</strong>，審核作業約需 <strong>1–3 個工作天</strong>。如有緊急需求，請聯繫您的 Account Manager（AM）。</p>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" type="button" data-close data-en="Cancel" data-zh="取消">Cancel</button>
+      <button class="btn btn-navy" id="do-submit" type="button">
+        <span class="ms">send</span><span class="lang-en">Submit for Review</span><span class="lang-zh">提交審查</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="m-submitted" hidden>
+  <div class="dialog narrow" role="dialog" aria-modal="true" aria-labelledby="m-submitted-title">
+    <div class="dialog-head tone-wait" id="m-submitted-title">
+      <span class="ms">outgoing_mail</span>
+      <span class="lang-en">Review Request Submitted</span>
+      <span class="lang-zh">已提交審查</span>
+    </div>
+    <div class="dialog-body dialog-copy">
+      <div class="lang-en">
+        <p>Your event review request has been submitted to JILI.US successfully.</p>
+        <p>Once approved, the tournament event will take effect according to the configured start time.</p>
+      </div>
+      <div class="lang-zh">
+        <p>您的活動審查申請已成功提交至 JILI.US，請等待審核結果。</p>
+        <p>審核通過後，排行榜活動將依設定時間生效。</p>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-info" type="button" data-close data-en="OK" data-zh="確定">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Agree & Approve ============ -->
+<div class="backdrop" id="m-agree" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="m-agree-title">
+    <div class="dialog-head tone-warn" id="m-agree-title">
+      <span class="ms">gavel</span>
+      <span class="lang-en">Tournament Event Confirmation</span>
+      <span class="lang-zh">排行榜活動確認</span>
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <p class="lead lang-en">Please confirm the tournament event settings below:</p>
+      <p class="lead lang-zh">請確認本次排行榜活動設定：</p>
+      <dl class="settings" data-settings></dl>
+      <hr class="rule">
+      <div class="dialog-copy">
+        <div class="lang-en">
+          <p>I confirm that all event settings have been reviewed and are correct.</p>
+          <p>Our company agrees to take full responsibility for the prize pool, reward distribution, and any related issues or disputes arising from this event.</p>
+          <p>JILI.US only provides the tournament system and is not responsible for this event or any related liabilities.</p>
+          <p><strong>Once submitted, the event will be automatically approved and scheduled based on the configured start time. No further changes or cancellation will be allowed.</strong></p>
+        </div>
+        <div class="lang-zh">
+          <p>我已確認本次活動設定無誤，並同意由本公司自行承擔本次活動之獎池、獎勵發放及相關責任或爭議。</p>
+          <p>JILI.US 僅提供排行榜系統服務，不承擔本活動之相關責任。</p>
+          <p><strong>送出後將自動完成審核，活動依設定時間生效，且不得再修改或取消。</strong></p>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" type="button" data-close data-en="Cancel" data-zh="取消">Cancel</button>
+      <button class="btn btn-green" id="do-agree" type="button">
+        <span class="ms">check</span><span class="lang-en">Agree &amp; Submit</span><span class="lang-zh">同意並送出</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="m-approved" hidden>
+  <div class="dialog narrow" role="dialog" aria-modal="true" aria-labelledby="m-approved-title">
+    <div class="dialog-head tone-ok" id="m-approved-title">
+      <span class="ms">task_alt</span>
+      <span class="lang-en">Approval Completed</span>
+      <span class="lang-zh">簽核完成</span>
+    </div>
+    <div class="dialog-body dialog-copy">
+      <p class="lang-en">The tournament event has been approved and will take effect according to the configured start time.</p>
+      <p class="lang-zh">排行榜活動已完成簽核並通過審核，將依設定時間生效。</p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-green" type="button" data-close data-en="OK" data-zh="確定">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ approval record (spec V2 section 12) ============ -->
+<div class="backdrop" id="m-record" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="m-record-title">
+    <div class="dialog-head" id="m-record-title">
+      <span class="ms">history</span>
+      <span class="lang-en">Approval Record</span>
+      <span class="lang-zh">簽核紀錄</span>
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-body"><dl class="record-list" id="record-fields"></dl></div>
+    <div class="dialog-foot">
+      <button class="btn" type="button" data-close data-en="Close" data-zh="關閉">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ prototype helper — not part of the product UI ============ -->
+<button class="helper-open" id="helper-open" type="button">Prototype</button>
+<aside class="helper" id="helper">
+  <h2><span class="ms">science</span><span class="lang-en">Prototype guide</span><span class="lang-zh">操作說明</span>
+    <button type="button" id="helper-min" aria-label="Minimise">&minus;</button>
+  </h2>
+  <ol>
+    <li><span class="lang-en">Four buttons at the bottom: <b>Cancel · Save Draft · Submit for Review · Agree &amp; Approve</b>.</span><span class="lang-zh">頁尾四顆按鈕：<b>取消 · 儲存草稿 · 提交審查 · 同意簽核</b>。</span></li>
+    <li><span class="lang-en"><b>Save Draft</b> keeps the status at Draft — you can keep editing.</span><span class="lang-zh"><b>儲存草稿</b>：狀態留在 Draft，還能繼續改。</span></li>
+    <li><span class="lang-en"><b>Submit for Review</b> → Pending Review, the form locks, and the JILI.US notification appears below.</span><span class="lang-zh"><b>提交審查</b>：轉 Pending Review、表單鎖定，下方出現 JILI.US 通知。</span></li>
+    <li><span class="lang-en"><b>Agree &amp; Approve</b> → disclaimer → auto-approved, form locks.</span><span class="lang-zh"><b>同意簽核</b>：免責聲明 → 自動核准、表單鎖定。</span></li>
+    <li><span class="lang-en">Time Zone in both dialogs follows the <b>GMT selector</b> in the header — change it and reopen to see it move.</span><span class="lang-zh">彈窗的 Time Zone 跟著右上角 <b>GMT 選單</b>走，改了再開就會變。</span></li>
+    <li><span class="lang-en">Games and prize rows are live — edits flow into the dialog summary.</span><span class="lang-zh">遊戲與獎項可編輯，會即時反映到彈窗摘要。</span></li>
+  </ol>
+  <div class="helper-foot">
+    <button class="btn btn-sm" id="do-reset" type="button" style="width:100%">
+      <span class="ms">restart_alt</span><span class="lang-en">Reset prototype</span><span class="lang-zh">重設原型</span>
+    </button>
+  </div>
+</aside>
+
+<script>
+(function(){
+  "use strict";
+
+  /* If Material Symbols never loads, hide the ligature spans rather than
+     showing raw words like "check_circle". */
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function(){
+      if (!document.fonts.check('16px "Material Symbols Outlined"')) {
+        document.documentElement.classList.add("no-icons");
+      }
+    });
+  }
+
+  var T = {
+    draft:{en:"Draft / Unsigned", zh:"草稿 / 未簽核"},
+    pending:{en:"Pending Review", zh:"待審核"},
+    approved:{en:"Approved", zh:"已核准"},
+    savedAt:{en:"Draft saved ", zh:"草稿已儲存 "},
+    lockedReview:{en:"Settings are locked while JILI.US reviews this event.", zh:"審核期間活動設定已鎖定，不可修改。"},
+    lockedApproved:{en:"Approved — the settings can no longer be changed or cancelled.", zh:"已完成簽核 — 設定不可再修改或取消。"},
+    recordTip:{en:"View approval record", zh:"查看簽核紀錄"},
+    none:{en:"—", zh:"—"},
+    f:{
+      name:{en:"Event Name", zh:"活動名稱"},
+      games:{en:"Event Game(s)", zh:"活動遊戲"},
+      rule:{en:"Event Rule", zh:"活動規則"},
+      start:{en:"Start Time", zh:"開始時間"},
+      end:{en:"End Time", zh:"結束時間"},
+      tz:{en:"Time Zone", zh:"時區"},
+      winners:{en:"Total Winners", zh:"總得獎名額"},
+      cost:{en:"Total Prize Pool", zh:"總獎池"},
+      agent:{en:"Agent ID / Site", zh:"Agent ID / 站台"},
+      operator:{en:"Operator", zh:"提交帳號"},
+      submitted:{en:"Submitted At", zh:"提交時間"},
+      signedAt:{en:"Approved At", zh:"簽核時間"},
+      eventId:{en:"Event ID", zh:"Event ID"},
+      consent:{en:"Disclaimer Consent", zh:"免責聲明同意紀錄"},
+      snapshot:{en:"Settings At Approval", zh:"簽核時活動設定"},
+      result:{en:"Result", zh:"審核結果"}
+    },
+    consentSelf:{
+      en:"Tournament Event Confirmation — agreed (operator bears the prize pool and related liabilities)",
+      zh:"排行榜活動確認 — 已同意（獎池與相關責任由營運商自行承擔）"
+    },
+    consentSubmit:{en:"Submitted to JILI.US for manual review (co-hosted / shared prize pool)",
+                   zh:"已提交 JILI.US 人工審核（共同舉辦／共同分擔獎池）"},
+    resultAuto:{en:"Auto-approved by system", zh:"系統自動審核通過"},
+    resultJili:{en:"Approved by JILI.US reviewer", zh:"JILI.US 人工審核通過"},
+    resultWait:{en:"Waiting for JILI.US review", zh:"等待 JILI.US 審核"},
+    jiliDoneHead:{en:"Approved by JILI.US at ", zh:"已由 JILI.US 於 "},
+    jiliDoneTail:{en:" — the event takes effect at its start time.", zh:" 審核通過，活動將依設定時間生效。"},
+    gamesCount:{en:" game(s)", zh:" 款遊戲"},
+    noGames:{en:"No games selected.", zh:"尚未選擇遊戲。"}
+  };
+
+  function t(node){ return (node && node[lang]) ? node[lang] : ""; }
+
+  var lang = "en";
+  try { lang = sessionStorage.getItem("proto2-lang") || "en"; } catch(e){}
+
+  var langSel = document.getElementById("lang");
+  langSel.value = lang;
+  langSel.addEventListener("change", function(){
+    lang = langSel.value;
+    try { sessionStorage.setItem("proto2-lang", lang); } catch(e){}
+    applyLang();
+  });
+
+  /* ---------------- game picker ---------------- */
+  var GAMES = [
+    {id:"260", name:"Golden Empire", kind:"Slot"},
+    {id:"265", name:"Slot_Crazy 777", kind:"Slot"},
+    {id:"266", name:"Slot_Bone Fortune", kind:"Slot"},
+    {id:"267", name:"Slot_Money Coming", kind:"Slot"},
+    {id:"268", name:"Slot_Mayan Empire : Hold & Win", kind:"Slot"},
+    {id:"269", name:"Slot_Jungle King", kind:"Slot"},
+    {id:"270", name:"Slot_Golden Joker", kind:"Slot"},
+    {id:"271", name:"Slot_JILI Caishen", kind:"Slot"},
+    {id:"275", name:"Slot_Charge Bison", kind:"Slot"},
+    {id:"277", name:"Slot_Golden Bank", kind:"Slot"},
+    {id:"278", name:"Slot_Fortune Gems", kind:"Slot"},
+    {id:"281", name:"Slot_Boxing King", kind:"Slot"},
+    {id:"284", name:"Slot_Super Ace", kind:"Slot"},
+    {id:"287", name:"Slot_Lucky Coming", kind:"Slot"},
+    {id:"290", name:"Slot_Wild Bounty", kind:"Slot"},
+    {id:"401", name:"Fish_Dragon Fortune", kind:"Fish"},
+    {id:"402", name:"Fish_Happy Fishing", kind:"Fish"},
+    {id:"403", name:"Fish_Jackpot Fishing", kind:"Fish"},
+    {id:"404", name:"Fish_Mega Fishing", kind:"Fish"},
+    {id:"405", name:"Fish_Bombing Fishing", kind:"Fish"}
+  ];
+  var picked = ["260"];
+  var kindFilter = "all";
+
+  var elAvailable = document.getElementById("available");
+  var elSelected  = document.getElementById("selected");
+  var elSearch    = document.getElementById("game-search");
+
+  function gameById(id){
+    for (var i=0;i<GAMES.length;i++) if (GAMES[i].id === id) return GAMES[i];
+    return null;
+  }
+
+  function renderGames(){
+    var q = elSearch.value.trim().toLowerCase();
+    var avail = GAMES.filter(function(g){
+      if (picked.indexOf(g.id) > -1) return false;
+      if (kindFilter !== "all" && g.kind !== kindFilter) return false;
+      if (q && (g.name + " " + g.id).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+
+    elAvailable.innerHTML = "";
+    if (!avail.length) {
+      elAvailable.innerHTML = '<div class="empty-pick">No games match.</div>';
+    } else {
+      avail.forEach(function(g){
+        var row = document.createElement("div");
+        row.className = "grow";
+        row.innerHTML =
+          '<label><input type="checkbox" class="form-field">' +
+          '<span class="gid">' + g.id + '</span>' +
+          '<span class="gname"></span></label>' +
+          '<span class="gtag' + (g.kind === "Fish" ? " fish" : "") + '">' + g.kind + '</span>';
+        row.querySelector(".gname").textContent = g.name;
+        row.querySelector("input").addEventListener("change", function(){
+          if (locked) return;
+          picked.push(g.id);
+          renderGames();
+        });
+        elAvailable.appendChild(row);
+      });
+    }
+
+    elSelected.innerHTML = "";
+    if (!picked.length) {
+      var none = document.createElement("div");
+      none.className = "empty-pick";
+      none.textContent = t(T.noGames);
+      elSelected.appendChild(none);
+    } else {
+      picked.forEach(function(id){
+        var g = gameById(id);
+        if (!g) return;
+        var row = document.createElement("div");
+        row.className = "grow";
+        row.innerHTML =
+          '<span class="gid">' + g.id + '</span><span class="gname"></span>' +
+          '<span class="gtag' + (g.kind === "Fish" ? " fish" : "") + '">' + g.kind + '</span>' +
+          '<button class="drop form-field" type="button" aria-label="Remove"><span class="ms">close</span></button>';
+        row.querySelector(".gname").textContent = g.name;
+        row.querySelector(".drop").addEventListener("click", function(){
+          if (locked) return;
+          picked = picked.filter(function(x){ return x !== id; });
+          renderGames();
+        });
+        elSelected.appendChild(row);
+      });
+    }
+
+    document.getElementById("n-all").textContent   = GAMES.length;
+    document.getElementById("n-slot").textContent  = GAMES.filter(function(g){ return g.kind === "Slot"; }).length;
+    document.getElementById("n-fish").textContent  = GAMES.filter(function(g){ return g.kind === "Fish"; }).length;
+    document.getElementById("n-available").textContent = avail.length;
+    document.getElementById("n-selected").textContent  = picked.length;
+    if (locked) lockFields();
+  }
+
+  elSearch.addEventListener("input", renderGames);
+  var tabs = document.querySelectorAll(".tab");
+  for (var ti=0; ti<tabs.length; ti++){
+    tabs[ti].addEventListener("click", function(){
+      if (locked) return;
+      kindFilter = this.getAttribute("data-kind");
+      for (var k=0;k<tabs.length;k++) tabs[k].setAttribute("aria-pressed", String(tabs[k] === this));
+      renderGames();
+    });
+  }
+  document.getElementById("add-all").addEventListener("click", function(){
+    if (locked) return;
+    GAMES.forEach(function(g){
+      if (picked.indexOf(g.id) < 0 && picked.length < 20 &&
+          (kindFilter === "all" || g.kind === kindFilter)) picked.push(g.id);
+    });
+    renderGames();
+  });
+  document.getElementById("clear-all").addEventListener("click", function(){
+    if (locked) return;
+    picked = [];
+    renderGames();
+  });
+
+  /* ---------------- prize rows ---------------- */
+  var prizeBody = document.getElementById("prize-body");
+
+  function addRow(from, to, cur, amount){
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td><input class="ctrl form-field p-from" type="number" min="1" value="' + from + '"></td>' +
+      '<td><input class="ctrl form-field p-to" type="number" min="1" value="' + to + '"></td>' +
+      '<td><select class="ctrl form-field p-cur"><option>SC</option><option>GC</option></select></td>' +
+      '<td><input class="ctrl form-field p-amt" type="number" min="0" step="0.01" value="' + amount + '"></td>' +
+      '<td class="num p-count">1</td>' +
+      '<td class="num p-value">$0.00</td>' +
+      '<td><div class="rowacts">' +
+      '<button class="iconbtn form-field p-dup" type="button" aria-label="Duplicate row"><span class="ms">content_copy</span></button>' +
+      '<button class="iconbtn del form-field p-del" type="button" aria-label="Delete row"><span class="ms">delete</span></button>' +
+      '</div></td>';
+    tr.querySelector(".p-cur").value = cur;
+    prizeBody.appendChild(tr);
+
+    var inputs = tr.querySelectorAll("input, select");
+    for (var i=0;i<inputs.length;i++) inputs[i].addEventListener("input", totals);
+    tr.querySelector(".p-dup").addEventListener("click", function(){
+      if (locked) return;
+      addRow(tr.querySelector(".p-from").value, tr.querySelector(".p-to").value,
+             tr.querySelector(".p-cur").value, tr.querySelector(".p-amt").value);
+      totals();
+    });
+    tr.querySelector(".p-del").addEventListener("click", function(){
+      if (locked) return;
+      if (prizeBody.rows.length <= 1) return;
+      tr.remove();
+      totals();
+    });
+    return tr;
+  }
+
+  function money(n){ return "$" + n.toFixed(2); }
+
+  function totals(){
+    var winners = 0, cost = 0;
+    for (var i=0;i<prizeBody.rows.length;i++){
+      var tr = prizeBody.rows[i];
+      var from = parseInt(tr.querySelector(".p-from").value, 10);
+      var to   = parseInt(tr.querySelector(".p-to").value, 10);
+      var amt  = parseFloat(tr.querySelector(".p-amt").value);
+      if (isNaN(from) || isNaN(to) || to < from) { from = to = 1; }
+      if (isNaN(amt)) amt = 0;
+      var n = to - from + 1;
+      tr.querySelector(".p-count").textContent = n;
+      tr.querySelector(".p-value").textContent = money(n * amt);
+      winners += n; cost += n * amt;
+    }
+    document.getElementById("total-winners").textContent = winners;
+    document.getElementById("total-cost").textContent = money(cost);
+  }
+
+  document.getElementById("add-row").addEventListener("click", function(){
+    if (locked) return;
+    var n = prizeBody.rows.length + 1;
+    addRow(n, n, "SC", 10);
+    totals();
+  });
+
+  addRow(1, 1, "SC", 30);
+  addRow(2, 2, "SC", 20);
+  addRow(3, 3, "SC", 10);
+  totals();
+
+  /* ---------------- event data for the dialogs ---------------- */
+  function eventData(){
+    var time = document.getElementById("event-time").value.split(" - ");
+    var names = picked.map(function(id){
+      var g = gameById(id);
+      return g ? (g.id + "_" + g.name) : id;
+    });
+    return {
+      name: document.getElementById("event-name").value || t(T.none),
+      gamesList: names,
+      rule: document.getElementById("event-type").value,
+      start: (time[0] || "").trim() || t(T.none),
+      end: (time[1] || "").trim() || t(T.none),
+      tz: document.getElementById("tz").value,
+      winners: document.getElementById("total-winners").textContent,
+      cost: document.getElementById("total-cost").textContent,
+      agent: document.getElementById("agent-id").value,
+      operator: "SSS_Operation",
+      eventId: "SSS-" + document.getElementById("event-name").value
+    };
+  }
+
+  var ORDER = ["name","games","rule","start","end","tz","winners","cost"];
+
+  /* games are stored as a list and formatted at render time, so the
+     summary follows the current language even for an old record */
+  function fmtGames(list){
+    if (!list || !list.length) return t(T.none);
+    var sep = (lang === "zh") ? "、" : ", ";
+    if (list.length > 3) return list.length + t(T.gamesCount) + sep + list.slice(0,3).join(sep) + " …";
+    return list.join(sep);
+  }
+
+  function val(d, k){ return (k === "games") ? fmtGames(d.gamesList) : d[k]; }
+
+  function fillSettings(dl, d){
+    dl.innerHTML = "";
+    ORDER.forEach(function(k){
+      var dt = document.createElement("dt");
+      var dd = document.createElement("dd");
+      dt.textContent = t(T.f[k]) + (lang === "zh" ? "：" : ":");
+      dd.textContent = val(d, k);
+      if (k === "tz") { dt.className = "tz-row"; dd.className = "tz"; }
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+  }
+
+  /* ---------------- status + locking ---------------- */
+  var status = "draft", locked = false, record = null, savedAt = null;
+  var statusSlot = document.getElementById("status-slot");
+  var savedNote  = document.getElementById("saved-note");
+  var actionbar  = document.getElementById("actionbar");
+  var PILL = {draft:"pill-hold", pending:"pill-wait", approved:"pill-ok"};
+  var ICON = {draft:"edit_note", pending:"hourglass_top", approved:"check_circle"};
+
+  function renderStatus(){
+    statusSlot.innerHTML = "";
+    var pill = document.createElement("span");
+    pill.className = "pill " + PILL[status];
+    pill.innerHTML = '<span class="ms">' + ICON[status] + '</span>';
+    pill.appendChild(document.createTextNode(t(T[status])));
+    statusSlot.appendChild(pill);
+
+    if (record) {
+      var info = document.createElement("button");
+      info.type = "button";
+      info.className = "record-btn";
+      info.title = t(T.recordTip);
+      info.setAttribute("aria-label", t(T.recordTip));
+      info.innerHTML = '<span class="ms">info</span>';
+      info.addEventListener("click", showRecord);
+      statusSlot.appendChild(info);
+    }
+
+    savedNote.textContent = (status === "draft" && savedAt) ? (t(T.savedAt) + savedAt) : "";
+
+    var lockNote = document.getElementById("lock-note");
+    if (locked) {
+      actionbar.classList.add("locked");
+      lockNote.textContent = (status === "pending") ? t(T.lockedReview) : t(T.lockedApproved);
+    } else {
+      actionbar.classList.remove("locked");
+      lockNote.textContent = "";
+    }
+    ["btn-cancel","btn-draft","btn-submit","btn-agree"].forEach(function(id){
+      document.getElementById(id).disabled = locked;
+    });
+  }
+
+  function lockFields(){
+    var fields = document.querySelectorAll(".form-field");
+    for (var i=0;i<fields.length;i++) fields[i].disabled = true;
+  }
+
+  function lockAll(){
+    locked = true;
+    lockFields();
+    renderStatus();
+  }
+
+  /* ---------------- modals ---------------- */
+  var openDialog = null, lastFocus = null;
+
+  function open(id){
+    var bd = document.getElementById(id);
+    lastFocus = document.activeElement;
+    bd.hidden = false;
+    openDialog = bd;
+    var first = bd.querySelector(".dialog-foot .btn");
+    if (first) first.focus();
+  }
+  function close(){
+    if (!openDialog) return;
+    openDialog.hidden = true;
+    openDialog = null;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  document.addEventListener("click", function(e){
+    var el = e.target;
+    while (el && el.nodeType === 1) {
+      if (el.hasAttribute("data-close")) { close(); return; }
+      el = el.parentNode;
+    }
+    if (openDialog && e.target === openDialog) close();
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && openDialog) close();
+  });
+
+  function stamp(){
+    var d = new Date(), p = function(n){ return (n<10?"0":"") + n; };
+    return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + " " +
+           p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+
+  /* ---- A. Save Draft ---- */
+  document.getElementById("btn-draft").addEventListener("click", function(){
+    savedAt = stamp();
+    renderStatus();
+    open("m-draft");
+  });
+
+  /* ---- B. Submit for Review ---- */
+  document.getElementById("btn-submit").addEventListener("click", function(){
+    fillSettings(document.querySelector("#m-submit [data-settings]"), eventData());
+    open("m-submit");
+  });
+  document.getElementById("do-submit").addEventListener("click", function(){
+    close();
+    status = "pending";
+    record = {kind:"submit", at:stamp(), data:eventData()};
+    lockAll();
+    showJili();
+    open("m-submitted");
+  });
+
+  /* ---- C. Agree & Approve ---- */
+  document.getElementById("btn-agree").addEventListener("click", function(){
+    fillSettings(document.querySelector("#m-agree [data-settings]"), eventData());
+    open("m-agree");
+  });
+  document.getElementById("do-agree").addEventListener("click", function(){
+    close();
+    status = "approved";
+    record = {kind:"self", at:stamp(), data:eventData()};
+    lockAll();
+    open("m-approved");
+  });
+
+  document.getElementById("btn-cancel").addEventListener("click", function(){
+    location.reload();
+  });
+
+  /* ---------------- approval record (spec V2 section 12) ---------------- */
+  function showRecord(){
+    if (!record) return;
+    var d = record.data;
+    var dl = document.getElementById("record-fields");
+    dl.innerHTML = "";
+    var rows = [
+      [t(T.f.eventId), d.eventId],
+      [t(T.f.name), d.name],
+      [t(T.f.agent), d.agent],
+      [t(T.f.operator), d.operator],
+      [record.kind === "self" ? t(T.f.signedAt) : t(T.f.submitted), record.at],
+      [t(T.f.start) + " / " + t(T.f.end), d.start + "  –  " + d.end],
+      [t(T.f.tz), d.tz],
+      [t(T.f.winners) + " / " + t(T.f.cost), d.winners + "  /  " + d.cost],
+      [t(T.f.snapshot), d.rule + " · " + fmtGames(d.gamesList)],
+      [t(T.f.consent), record.kind === "self" ? t(T.consentSelf) : t(T.consentSubmit)],
+      [t(T.f.result), status === "approved"
+          ? (record.kind === "self" ? t(T.resultAuto) : t(T.resultJili))
+          : t(T.resultWait)]
+    ];
+    rows.forEach(function(r){
+      var dt = document.createElement("dt"); dt.textContent = r[0];
+      var dd = document.createElement("dd"); dd.textContent = r[1];
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+    open("m-record");
+  }
+
+  /* ---------------- JILI.US notification (spec V2 section 15) ---------------- */
+  var jiliCard = document.getElementById("jili-card");
+  var jiliFields = document.getElementById("jili-fields");
+  var jiliDone = document.getElementById("jili-done");
+  var jiliDoneAt = null;
+
+  var NOTICE = ["name","agent","games","rule","start","end","tz","winners","cost","operator"];
+
+  function fillJili(){
+    if (!record) return;
+    var d = record.data;
+    jiliFields.innerHTML = "";
+    NOTICE.forEach(function(k){
+      var dt = document.createElement("dt"); dt.textContent = t(T.f[k]);
+      var dd = document.createElement("dd"); dd.textContent = val(d, k);
+      jiliFields.appendChild(dt); jiliFields.appendChild(dd);
+    });
+    var dt2 = document.createElement("dt"); dt2.textContent = t(T.f.submitted);
+    var dd2 = document.createElement("dd"); dd2.textContent = record.at;
+    jiliFields.appendChild(dt2); jiliFields.appendChild(dd2);
+  }
+
+  function showJili(){
+    fillJili();
+    jiliDone.style.display = "none";
+    document.getElementById("jili-approve").disabled = false;
+    jiliCard.hidden = false;
+  }
+
+  document.getElementById("jili-approve").addEventListener("click", function(){
+    jiliDoneAt = stamp();
+    status = "approved";
+    renderStatus();
+    this.disabled = true;
+    jiliDone.textContent = t(T.jiliDoneHead) + jiliDoneAt + t(T.jiliDoneTail);
+    jiliDone.style.display = "block";
+  });
+  document.getElementById("jili-detail").addEventListener("click", showRecord);
+
+  /* the header GMT selector drives the Time Zone shown in both dialogs */
+  document.getElementById("tz").addEventListener("change", function(){
+    if (!record) return;
+    record.data.tz = this.value;
+    fillJili();
+  });
+
+  /* ---------------- language ---------------- */
+  function applyLang(){
+    document.documentElement.setAttribute("data-lang", lang);
+    var swaps = document.querySelectorAll("[data-en]");
+    for (var i=0;i<swaps.length;i++){
+      swaps[i].textContent = swaps[i].getAttribute("data-" + lang) || swaps[i].getAttribute("data-en");
+    }
+    renderStatus();
+    if (!jiliCard.hidden) {
+      var wasDone = jiliDone.style.display === "block";
+      fillJili();
+      if (wasDone) {
+        jiliDone.textContent = t(T.jiliDoneHead) + jiliDoneAt + t(T.jiliDoneTail);
+        jiliDone.style.display = "block";
+        document.getElementById("jili-approve").disabled = true;
+      }
+    }
+  }
+
+  /* ---------------- prototype helper ---------------- */
+  var helper = document.getElementById("helper");
+  var helperOpen = document.getElementById("helper-open");
+  document.getElementById("helper-min").addEventListener("click", function(){
+    helper.style.display = "none";
+    helperOpen.style.display = "block";
+  });
+  helperOpen.addEventListener("click", function(){
+    helper.style.display = "";
+    helperOpen.style.display = "none";
+  });
+  document.getElementById("do-reset").addEventListener("click", function(){
+    location.reload();
+  });
+
+  /* ---------------- live clock ---------------- */
+  var clock = document.getElementById("clock");
+  function tick(){ clock.textContent = stamp(); }
+  tick(); setInterval(tick, 1000);
+
+  renderGames();
+  applyLang();
+})();
+</script>
