@@ -1049,7 +1049,9 @@
       actionbar.classList.remove("locked");
       lockNote.textContent = "";
     }
-    ["btn-cancel","btn-draft","btn-submit","btn-agree"].forEach(function(id){
+    /* Cancel stays live — spec section 14 locks the three submit modes,
+       and a locked page still needs a way out. */
+    ["btn-draft","btn-submit","btn-agree"].forEach(function(id){
       document.getElementById(id).disabled = locked;
     });
   }
