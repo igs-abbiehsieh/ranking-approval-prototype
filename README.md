@@ -2,12 +2,12 @@
 
 排行榜活動簽核功能的可點擊原型，共兩份。單一 HTML 檔、無後端、無建置流程，所有狀態變化都在瀏覽器端模擬，重新整理即回到初始狀態。兩份都可切換 English／繁體中文。
 
-**入口頁：** https://igs-abbiehsieh.github.io/ranking-approval-prototype/
+**入口頁：** https://igs-chiaoruhsieh.github.io/ranking-approval-prototype/
 
 | | 對應畫面 | 直接連結 |
 |---|---|---|
-| **V1** | Activity Setting（活動列表頁） | [ranking-approval-prototype.html](https://igs-abbiehsieh.github.io/ranking-approval-prototype/ranking-approval-prototype.html) |
-| **V2** | Simple Ranking Setting（活動設定頁） | [ranking-setting-approval-v2.html](https://igs-abbiehsieh.github.io/ranking-approval-prototype/ranking-setting-approval-v2.html) |
+| **V1** | Activity Setting（活動列表頁） | [ranking-approval-prototype.html](https://igs-chiaoruhsieh.github.io/ranking-approval-prototype/ranking-approval-prototype.html) |
+| **V2** | Simple Ranking Setting（活動設定頁） | [ranking-setting-approval-v2.html](https://igs-chiaoruhsieh.github.io/ranking-approval-prototype/ranking-setting-approval-v2.html) |
 
 ---
 
